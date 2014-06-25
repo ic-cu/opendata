@@ -1,0 +1,3 @@
+db.url = jdbc:mysql://x.y.z.w/dbname
+db.user = pippo
+db.pass = abcde

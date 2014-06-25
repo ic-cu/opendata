@@ -42,6 +42,7 @@ public class OpenData
 	private long totalStart, totalStop, partialStart, partialStop;
 	private SimpleDateFormat dateStampFormat;
 	private String labelIsil;
+	private Properties dbconfig;
 
 	private String wrap(String field, boolean last)
 	{
@@ -79,9 +80,11 @@ public class OpenData
 	public OpenData()
 	{
 		config = new Properties();
+		dbconfig = new Properties();
 		try
 		{
 			config.load(new FileReader("opendata.prop"));
+			dbconfig.load(new FileReader("db.prop"));
 			initLogger();
 		}
 		catch(FileNotFoundException e)
@@ -93,9 +96,9 @@ public class OpenData
 			log.error("Impossibile leggere il file di configurazione: "
 					+ e.getMessage());
 		}
-		String url = config.getProperty("db.url");
-		String user = config.getProperty("db.user");
-		String pass = config.getProperty("db.pass");
+		String url = dbconfig.getProperty("db.url");
+		String user = dbconfig.getProperty("db.user");
+		String pass = dbconfig.getProperty("db.pass");
 		db = new DB(DB.mysqlDriver, url, user, pass);
 
 		SimpleDateFormat sdf;
@@ -125,8 +128,7 @@ public class OpenData
 		PreparedStatement stmt;
 		stmt = db.prepare(config.getProperty("territorio.query"));
 		bibs = db.select(config.getProperty("censite.query"));
-		String isil, denominazione, nome, categoria;
-		int totalePosseduto, acquistiUltimoAnno;
+		String isil, denominazione;
 		int idBib;
 		String query = config.getProperty("territorio.query");
 		log.debug("Query: " + query);
