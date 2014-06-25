@@ -8,10 +8,10 @@ csv.ts = \"
 
 csv.bom = \uFEFF
 
-temp.dir = opendata/tmp
-log.file = opendata/tmp/opendata.log
+temp.dir = tmp
+log.file = tmp/opendata.log
 log.pattern = %d{yyyy-MM-dd HH:mm:ss} %p %C{1}.%M - %m%n
-dateStamp.pattern = yyysqly-MM-dd'T'HH:mm:ss
+dateStamp.pattern = yyyy-MM-dd'T'HH:mm:ss
 
 ## varie label che è meglio esternalizzare
 label.xml.isil = codice-isil
