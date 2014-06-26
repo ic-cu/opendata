@@ -108,7 +108,12 @@ public class OpenData
 		dateStampFormat = new SimpleDateFormat(
 				config.getProperty("dateStamp.pattern"));
 
-		tempDir = config.getProperty("temp.dir") + "/" + today;
+		tempDir = config.getProperty("temp.dir");
+
+		if(config.getProperty("temp.dir.daily") != null)
+		{
+			tempDir += "/" + today;
+		}
 		File tDir = null;
 		tDir = new File(tempDir);
 		tDir.mkdirs();

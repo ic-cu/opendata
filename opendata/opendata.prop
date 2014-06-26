@@ -8,8 +8,9 @@ csv.ts = \"
 
 csv.bom = \uFEFF
 
-temp.dir = tmp
-log.file = tmp/opendata.log
+temp.dir = .
+#temp.dir.daily = 
+log.file = opendata.log
 log.pattern = %d{yyyy-MM-dd HH:mm:ss} %p %C{1}.%M - %m%n
 dateStamp.pattern = yyyy-MM-dd'T'HH:mm:ss
 
