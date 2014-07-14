@@ -1,5 +1,3 @@
-
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +32,7 @@ import sql.DB;
 public class OpenData
 {
 	private DB db;
-	private Properties config;
+	private Properties config, dbconfig, qconfig;
 	private String today;
 	private String tempDir;
 	private String csvFS, csvTS, csvBOM;
@@ -42,7 +40,6 @@ public class OpenData
 	private long totalStart, totalStop, partialStart, partialStop;
 	private SimpleDateFormat dateStampFormat;
 	private String labelIsil;
-	private Properties dbconfig;
 
 	private String wrap(String field, boolean last)
 	{
@@ -81,10 +78,12 @@ public class OpenData
 	{
 		config = new Properties();
 		dbconfig = new Properties();
+		qconfig = new Properties();
 		try
 		{
 			config.load(new FileReader("opendata.prop"));
 			dbconfig.load(new FileReader("db.prop"));
+			qconfig.load(new FileReader("query.prop"));
 			initLogger();
 		}
 		catch(FileNotFoundException e)
@@ -131,11 +130,11 @@ public class OpenData
 		ResultSet bibs;
 		ResultSet bib;
 		PreparedStatement stmt;
-		stmt = db.prepare(config.getProperty("territorio.query"));
-		bibs = db.select(config.getProperty("censite.query"));
+		stmt = db.prepare(qconfig.getProperty("territorio.query"));
+		bibs = db.select(qconfig.getProperty("censite.query"));
 		String isil, denominazione;
 		int idBib;
-		String query = config.getProperty("territorio.query");
+		String query = qconfig.getProperty("territorio.query");
 		log.debug("Query: " + query);
 		ResultSetMetaData rsmd;
 		StringWriter output = new StringWriter();
@@ -288,8 +287,8 @@ public class OpenData
 		ResultSet bibs;
 		ResultSet bib;
 		PreparedStatement stmt;
-		stmt = db.prepare(config.getProperty("patrimonio.query"));
-		bibs = db.select(config.getProperty("censite.query"));
+		stmt = db.prepare(qconfig.getProperty("patrimonio.query"));
+		bibs = db.select(qconfig.getProperty("censite.query"));
 		String isil, denominazione, nome, categoria;
 		int totalePosseduto, acquistiUltimoAnno;
 		int idBib;
@@ -364,8 +363,8 @@ public class OpenData
 		ResultSet bibs;
 		ResultSet bib;
 		PreparedStatement stmt;
-		stmt = db.prepare(config.getProperty("fondi-speciali.query"));
-		bibs = db.select(config.getProperty("censite.query"));
+		stmt = db.prepare(qconfig.getProperty("fondi-speciali.query"));
+		bibs = db.select(qconfig.getProperty("censite.query"));
 		String descrizione, dewey, deweyTesto;
 		Document doc = new Document();
 		Element root = new Element("biblioteche");
@@ -442,9 +441,9 @@ public class OpenData
 		ResultSet bibs;
 		ResultSet bib;
 		PreparedStatement stmt;
-		stmt = db.prepare(config.getProperty("contatti.query"));
-		log.debug("Query: " + config.getProperty("censite.query"));
-		bibs = db.select(config.getProperty("censite.query"));
+		stmt = db.prepare(qconfig.getProperty("contatti.query"));
+		log.debug("Query: " + qconfig.getProperty("censite.query"));
+		bibs = db.select(qconfig.getProperty("censite.query"));
 		String contatto, tipo, note;
 		Document doc = new Document();
 		Element root = new Element("biblioteche");
@@ -505,7 +504,7 @@ public class OpenData
 
 	public String tipologie()
 	{
-		String query = config.getProperty("tipologie.query");
+		String query = qconfig.getProperty("tipologie.query");
 		ResultSet rs = db.select(query);
 		ResultSetMetaData rsmd;
 		StringWriter output = new StringWriter();
@@ -559,8 +558,8 @@ public class OpenData
 		ResultSet bibs;
 		ResultSet bib;
 		PreparedStatement stmt;
-		stmt = db.prepare(config.getProperty("specializzazioni.query"));
-		bibs = db.select(config.getProperty("censite.query"));
+		stmt = db.prepare(qconfig.getProperty("specializzazioni.query"));
+		bibs = db.select(qconfig.getProperty("censite.query"));
 		String dewey, deweyTesto;
 		Document doc = new Document();
 		Element root = new Element("biblioteche");

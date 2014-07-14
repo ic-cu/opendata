@@ -1,0 +1,159 @@
+## query per le biblioteche "censite"; riporta l'ISIL, ma per query ulteriori
+## viene usato l'id_biblioteca perché indicizzato
+
+censite.query = \
+	select \
+		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as isil, \
+		b.denominazione_ufficiale as denominazione, \
+		b.id_biblioteca as id \
+	FROM \
+		`stato_catalogazione` RIGHT OUTER JOIN `biblioteca` as b \
+		ON `stato_catalogazione`.`id_biblioteca` = `b`.`id_biblioteca` \
+	where \
+		stato_catalogazione.id_stato_catalogazione IS NULL \
+		AND `b`.`id_stato_biblioteca_workflow` != 4 \
+	ORDER BY isil ASC
+
+territorio.query = \
+	select \
+		b.`indirizzo`, \
+		`b`.`frazione`, \
+		`b`.`cap`, \
+		`c`.`denominazione` AS `comune`, \
+		concat('', lpad(`c`.`codice_istat`, 6, 0)) AS `codice istat comune`, \
+		`p`.`denominazione` AS `provincia`, \
+		`r`.`denominazione` AS `regione`, \
+		concat('', lpad(`p`.`codice_istat`, 3, 0)) AS `codice istat provincia`, \
+		replace(`g`.`latitudine`, '.', ',') as latitudine, \
+		replace(`g`.`longitudine`, '.', ',') as longitudine, \
+		contatti.valore as contatto, \
+		contatti.note as note, \
+		contatti.id_contatti_tipi as tipo \
+	FROM \
+		`contatti` AS `contatti` RIGHT OUTER JOIN \
+		`biblioteca` AS `b` \
+		ON `contatti`.`id_biblioteca` = `b`.`id_biblioteca`, \
+ 		`comune` AS `c`, \
+		`provincia` AS `p`, \
+		`regione` AS `r`, \
+		`geolocalizzazione` AS `g` \
+	WHERE \
+		`b`.`id_comune` = `c`.`id_comune` \
+		AND `c`.`id_provincia` = `p`.`id_provincia` \
+		AND `p`.`id_regione` = `r`.`id_regione` \
+		AND `g`.`id_biblioteca` = `b`.`id_biblioteca` \
+		AND `b`.`id_biblioteca` = ? \
+	ORDER BY `comune` ASC, `provincia` ASC
+	
+territorioOld.query = \
+	select \
+		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as `codice isil`, \
+		b.denominazione_ufficiale as denominazione, \
+		b.`indirizzo`, \
+		`b`.`frazione`, \
+		`b`.`cap`, \
+		`c`.`denominazione` AS `comune`, \
+		`c`.`codice_istat` AS `codice istat comune`, \
+		`p`.`denominazione` AS `provincia`, \
+		`r`.`denominazione` AS `regione`, \
+		`p`.`codice_istat` AS `codice istat provincia`, \
+		replace(`g`.`latitudine`, '.', ',') as latitudine, \
+		replace(`g`.`longitudine`, '.', ',') as longitudine, \
+		contatti.valore as contatto, \
+		contatti.note as note, \
+		contatti.id_contatti_tipi as tipo \
+	FROM \
+		`stato_catalogazione` AS `stato_catalogazione` RIGHT OUTER JOIN \
+		`contatti` AS `contatti` RIGHT OUTER JOIN \
+		`biblioteca` AS `b` \
+		ON `contatti`.`id_biblioteca` = `b`.`id_biblioteca` \
+		ON `stato_catalogazione`.`id_biblioteca` = `b`.`id_biblioteca`, \
+ 		`comune` AS `c`, \
+		`provincia` AS `p`, \
+		`regione` AS `r`, \
+		`geolocalizzazione` AS `g` \
+	WHERE \
+		`b`.`id_comune` = `c`.`id_comune` \
+		AND `c`.`id_provincia` = `p`.`id_provincia` \
+		AND `p`.`id_regione` = `r`.`id_regione` \
+		AND `g`.`id_biblioteca` = `b`.`id_biblioteca` \
+		AND `stato_catalogazione`.`id_stato_catalogazione` IS NULL \
+		AND `b`.`id_stato_biblioteca_workflow` != 4 \
+	ORDER BY `codice isil` ASC, `comune` ASC, `provincia` ASC
+	
+patrimonio.query = \
+	SELECT \
+		`patrimonio_specializzazione`.`descrizione` AS `nome`, \
+		`patrimonio_specializzazione_categoria`.`descrizione` AS `categoria`, \
+		`patrimonio`.`quantita`, \
+		`patrimonio`.`quantita_ultimo_anno` AS `acquisti-ultimo-anno` \
+	FROM \
+		`patrimonio` AS `patrimonio`, \
+		`patrimonio_specializzazione` AS `patrimonio_specializzazione`, \
+		`patrimonio_specializzazione_categoria` AS `patrimonio_specializzazione_categoria` \
+	WHERE \
+		`patrimonio`.`id_patrimonio_specializzazione` = `patrimonio_specializzazione`.`id_patrimonio_specializzazione` \
+		AND `patrimonio_specializzazione`.`id_patrimonio_specializzazione_categoria` = `patrimonio_specializzazione_categoria`.`id_patrimonio_specializzazione_categoria` \
+		AND `patrimonio`.`id_biblioteca` = ? \
+  order by `patrimonio_specializzazione_categoria`.`descrizione`, \
+  `patrimonio_specializzazione`.`descrizione`
+
+contatti.query = \
+	SELECT \
+		`contatti`.`valore` as contatto, \
+		`contatti`.`note`, \
+		`contatti_tipo`.`descrizione` as `tipo` \
+	FROM \
+		`contatti` AS `contatti`, \
+		`contatti_tipo` AS `contatti_tipo` \
+	WHERE \
+		`contatti`.`id_biblioteca` = ? \
+		AND `contatti`.`id_contatti_tipi` = `contatti_tipo`.`id_contatti_tipo` \
+  order by tipo
+  
+fondi-speciali.query = \
+  SELECT \
+  	`fondi_speciali`.`denominazione`, \
+  	`fondi_speciali`.`descrizione` AS `descrizione`, \
+  	`fondi_speciali`.`id_dewey` AS `dewey`, \
+  	`dewey`.`descrizione` AS `dewey-testo` \
+  FROM \
+  	`fondi_speciali` AS `fondi_speciali`, \
+  	`dewey` AS `dewey`, \
+  	`biblioteca_has_fondi_speciali` AS `biblioteca_has_fondi_speciali` \
+  WHERE \
+  	`fondi_speciali`.`id_dewey` = `dewey`.`id_dewey` \
+  	AND `biblioteca_has_fondi_speciali`.`id_biblioteca` = ? \
+  	AND `biblioteca_has_fondi_speciali`.`id_fondi_speciali` = `fondi_speciali`.`id_fondi_speciali`
+		
+tipologie.query = \
+	SELECT \
+		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as 'codice isil', \
+		b.denominazione_ufficiale as 'denominazione biblioteca', \
+		`tipologia_funzionale`.`descrizione` AS `tipologia funzionale`, \
+		`ente`.`denominazione` AS `denominazione ente`, \
+		`ente_tipologia_amministrativa`.`descrizione` AS `tipologia amministrativa` \
+	FROM \
+		`stato_catalogazione` RIGHT OUTER JOIN `biblioteca` as b ON `stato_catalogazione`.`id_biblioteca` = `b`.`id_biblioteca`, \
+		`ente` AS `ente`, \
+		`ente_tipologia_amministrativa` AS `ente_tipologia_amministrativa`, \
+		`tipologia_funzionale` AS `tipologia_funzionale` \
+	WHERE \
+		`b`.`id_ente` = `ente`.`id_ente` \
+		AND `ente`.`id_ente_tipologia_amministrativa` = `ente_tipologia_amministrativa`.`id_ente_tipologia_amministrativa` \
+		AND `b`.`id_tipologia_funzionale` = `tipologia_funzionale`.`id_tipologia_funzionale` \
+		AND `stato_catalogazione`.`id_stato_catalogazione` IS NULL \
+		AND `b`.`id_stato_biblioteca_workflow` != 4 \
+	order by concat('IT-', isil_provincia, lpad(isil_numero, 4, 0))
+
+specializzazioni.query = \
+	SELECT \
+		`dewey`.`id_dewey` AS `codice`, \
+		`dewey`.`descrizione` AS 'dewey-testo' \
+	FROM \
+		`dewey_libero` AS `dewey_libero`, \
+		`dewey` AS `dewey` \
+	WHERE \
+		`dewey_libero`.`id_biblioteca` = ? \
+		AND `dewey_libero`.`id_dewey` = `dewey`.`id_dewey` \
+	order by `dewey`.`id_dewey`
