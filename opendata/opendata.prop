@@ -138,7 +138,8 @@ patrimonio.query = \
 		`patrimonio`.`id_patrimonio_specializzazione` = `patrimonio_specializzazione`.`id_patrimonio_specializzazione` \
 		AND `patrimonio_specializzazione`.`id_patrimonio_specializzazione_categoria` = `patrimonio_specializzazione_categoria`.`id_patrimonio_specializzazione_categoria` \
 		AND `patrimonio`.`id_biblioteca` = ? \
-  order by `patrimonio_specializzazione`.`descrizione`
+  order by `patrimonio_specializzazione_categoria`.`descrizione`, \
+  `patrimonio_specializzazione`.`descrizione`
 
 contatti.query = \
 	SELECT \
