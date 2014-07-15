@@ -290,7 +290,7 @@ public class OpenData
 		stmt = db.prepare(qconfig.getProperty("patrimonio.query"));
 		bibs = db.select(qconfig.getProperty("censite.query"));
 		String isil, denominazione, nome, categoria;
-		int totalePosseduto, acquistiUltimoAnno;
+		int totalePosseduto, acquistiUltimoAnno = 0;
 		int idBib;
 		Document doc = new Document();
 		Element root = new Element("biblioteche");
@@ -330,7 +330,7 @@ public class OpenData
 					nome = bib.getString("nome");
 					categoria = bib.getString("categoria");
 					totalePosseduto = bib.getInt("quantita");
-					acquistiUltimoAnno = bib.getInt("acquisti-ultimo-anno");
+//					acquistiUltimoAnno = bib.getInt("acquisti-ultimo-anno");
 					patrimonioElement = new Element("materiale");
 					patrimonioElement.setAttribute("categoria", categoria);
 					if(totalePosseduto != 0)
