@@ -5,6 +5,8 @@ censite.query = \
 	select \
 		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as isil, \
 		b.denominazione_ufficiale as denominazione, \
+		b.fonte_descrizione as fonte, \
+		b.fonte_url as `url-fonte`, \
 		b.id_biblioteca as id \
 	FROM \
 		`stato_catalogazione` RIGHT OUTER JOIN `biblioteca` as b \
@@ -132,7 +134,9 @@ tipologie.query = \
 		b.denominazione_ufficiale as 'denominazione biblioteca', \
 		`tipologia_funzionale`.`descrizione` AS `tipologia funzionale`, \
 		`ente`.`denominazione` AS `denominazione ente`, \
-		`ente_tipologia_amministrativa`.`descrizione` AS `tipologia amministrativa` \
+		`ente_tipologia_amministrativa`.`descrizione` AS `tipologia amministrativa`, \
+		b.fonte_descrizione as 'fonte', \
+		b.fonte_url as 'url-fonte' \
 	FROM \
 		`stato_catalogazione` RIGHT OUTER JOIN `biblioteca` as b ON `stato_catalogazione`.`id_biblioteca` = `b`.`id_biblioteca`, \
 		`ente` AS `ente`, \

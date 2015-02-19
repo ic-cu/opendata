@@ -41,6 +41,19 @@ public class OpenData
 	private SimpleDateFormat dateStampFormat;
 	private String labelIsil;
 
+	private String trim(String field)
+	{
+		if(field != null)
+		{
+			field = field.replaceAll("\t+", " ");
+			field = field.replaceAll("\n+", " ");
+			field = field.replaceAll(" +", " ");
+			return field;
+		}
+		else
+			return "";
+	}
+
 	private String wrap(String field, boolean last)
 	{
 		String tmp = csvTS + field + csvTS;
@@ -132,7 +145,7 @@ public class OpenData
 		PreparedStatement stmt;
 		stmt = db.prepare(qconfig.getProperty("territorio.query"));
 		bibs = db.select(qconfig.getProperty("censite.query"));
-		String isil, denominazione;
+		String isil, denominazione, fonte, urlFonte;
 		int idBib;
 		String query = qconfig.getProperty("territorio.query");
 		log.debug("Query: " + query);
@@ -166,6 +179,8 @@ public class OpenData
 				isil = bibs.getString("isil");
 				idBib = bibs.getInt("id");
 				denominazione = bibs.getString("denominazione");
+				fonte = bibs.getString("fonte");
+				urlFonte = bibs.getString("url-fonte");
 				pw = new PrintWriter(output);
 				stmt.setInt(1, idBib);
 				bib = stmt.executeQuery();
@@ -197,7 +212,9 @@ public class OpenData
 							header += wrap("telefono");
 							header += wrap("fax");
 							header += wrap("email");
-							header += wrap("url", true);
+							header += wrap("url");
+							header += wrap("fonte");
+							header += wrap("url-fonte", true);
 							pw.println(header);
 							headerOk = true;
 						}
@@ -206,7 +223,8 @@ public class OpenData
 						{
 							if(oldIsil != "")
 							{
-								row += wrap(tel) + wrap(fax) + wrap(mail) + wrap(url, true);
+								row += wrap(tel) + wrap(fax) + wrap(mail) + wrap(url)
+										+ wrap(trim(fonte)) + wrap(urlFonte, true);
 								pw.println(row);
 								pw.flush();
 							}
@@ -223,7 +241,7 @@ public class OpenData
 							}
 							row += wrap(bib.getString(i));
 							oldIsil = isil;
-							tel = fax = mail = url = "";
+							tel = fax = mail = url = fonte = urlFonte = "";
 						}
 
 						// vanno gestiti i possibili contatti
@@ -321,6 +339,14 @@ public class OpenData
 				biblioteca = new Element("biblioteca");
 				biblioteca.setAttribute(labelIsil, isil);
 				biblioteca.setAttribute("denominazione", denominazione);
+				if(bibs.getString("fonte") != null)
+				{
+					biblioteca.setAttribute("fonte", trim(bibs.getString("fonte")));
+				}
+				if(bibs.getString("url-fonte") != null)
+				{
+					biblioteca.setAttribute("url-fonte", bibs.getString("url-fonte"));
+				}
 				stmt.setInt(1, idBib);
 				bib = stmt.executeQuery();
 				boolean ok = false;
@@ -330,7 +356,7 @@ public class OpenData
 					nome = bib.getString("nome");
 					categoria = bib.getString("categoria");
 					totalePosseduto = bib.getInt("quantita");
-//					acquistiUltimoAnno = bib.getInt("acquisti-ultimo-anno");
+// acquistiUltimoAnno = bib.getInt("acquisti-ultimo-anno");
 					patrimonioElement = new Element("materiale");
 					patrimonioElement.setAttribute("categoria", categoria);
 					if(totalePosseduto != 0)
@@ -392,6 +418,10 @@ public class OpenData
 				biblioteca.setAttribute(labelIsil, bibs.getString("isil"));
 				biblioteca.setAttribute("denominazione",
 						bibs.getString("denominazione"));
+				if(bibs.getString("fonte") != null)
+				{
+					biblioteca.setAttribute("fonte", trim(bibs.getString("fonte")));
+				}
 				stmt.setInt(1, bibs.getInt("id"));
 				bib = stmt.executeQuery();
 				boolean ok = false;
@@ -471,6 +501,14 @@ public class OpenData
 				biblioteca.setAttribute(labelIsil, bibs.getString("isil"));
 				biblioteca.setAttribute("denominazione",
 						bibs.getString("denominazione"));
+				if(bibs.getString("fonte") != null)
+				{
+					biblioteca.setAttribute("fonte", trim(bibs.getString("fonte")));
+				}
+				if(bibs.getString("url-fonte") != null)
+				{
+					biblioteca.setAttribute("url-fonte", bibs.getString("url-fonte"));
+				}
 				stmt.setInt(1, bibs.getInt("id"));
 				bib = stmt.executeQuery();
 				boolean ok = false;
@@ -536,9 +574,9 @@ public class OpenData
 					{
 						cell = "";
 					}
-					row += csvTS + cell.trim() + csvTS + csvFS;
+					row += csvTS + trim(cell) + csvTS + csvFS;
 				}
-				row += csvTS + rs.getString(i) + csvTS;
+				row += csvTS + trim(rs.getString(i)) + csvTS;
 				pw.println(row);
 			}
 			pw.close();
