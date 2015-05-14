@@ -92,8 +92,7 @@ public class OpenData
 		}
 		catch(IOException e)
 		{
-			log.error("Impossibile leggere il file di configurazione: "
-					+ e.getMessage());
+			log.error("Impossibile leggere il file di configurazione: " + e.getMessage());
 		}
 		String url = dbconfig.getProperty("db.url");
 		String user = dbconfig.getProperty("db.user");
@@ -104,8 +103,7 @@ public class OpenData
 		sdf = new SimpleDateFormat("yyyyMMdd");
 		today = sdf.format(new Date());
 
-		dateStampFormat = new SimpleDateFormat(
-				config.getProperty("dateStamp.pattern"));
+		dateStampFormat = new SimpleDateFormat(config.getProperty("dateStamp.pattern"));
 
 		tempDir = config.getProperty("temp.dir");
 
@@ -130,12 +128,12 @@ public class OpenData
 		ResultSet bibs;
 		ResultSet bib;
 		PreparedStatement stmt;
-		stmt = db.prepare(qconfig.getProperty("territorio.query"));
+		String query = qconfig.getProperty("territorio.query");
+		log.debug("Query: " + query);
+		stmt = db.prepare(query);
 		bibs = db.select(qconfig.getProperty("censite.query"));
 		String isil, denominazione;
 		int idBib;
-		String query = qconfig.getProperty("territorio.query");
-		log.debug("Query: " + query);
 		ResultSetMetaData rsmd;
 		StringWriter output = new StringWriter();
 		PrintWriter pw = null;
@@ -147,7 +145,6 @@ public class OpenData
 		int columns = 0;
 		int i;
 		log.info("Elaborazione territorio");
-		partialStart = System.nanoTime();
 		try
 		{
 			limit = Integer.parseInt(config.getProperty("censite.limit"));
@@ -285,8 +282,7 @@ public class OpenData
 		}
 		pw.close();
 		partialStop = System.nanoTime();
-		log.info("Elaborazione territorio terminata in "
-				+ (partialStop - partialStart) / 1000000000 + " secondi");
+		log.info("Elaborazione territorio terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
 		return output.getBuffer().toString();
 	}
 
@@ -302,8 +298,7 @@ public class OpenData
 		int idBib;
 		Document doc = new Document();
 		Element root = new Element("biblioteche");
-		root.setAttribute("data-export", dateStampFormat.format(new Date())
-				.replaceFirst("[0-9][0-9]$", ""));
+		root.setAttribute("data-export", dateStampFormat.format(new Date()).replaceFirst("[0-9][0-9]$", ""));
 		Element biblioteca;
 		Element patrimonioElement;
 		doc.setRootElement(root);
@@ -338,7 +333,7 @@ public class OpenData
 					nome = bib.getString("nome");
 					categoria = bib.getString("categoria");
 					totalePosseduto = bib.getInt("quantita");
-//					acquistiUltimoAnno = bib.getInt("acquisti-ultimo-anno");
+// acquistiUltimoAnno = bib.getInt("acquisti-ultimo-anno");
 					patrimonioElement = new Element("materiale");
 					patrimonioElement.setAttribute("categoria", categoria);
 					if(totalePosseduto != 0)
@@ -347,8 +342,7 @@ public class OpenData
 					}
 					if(acquistiUltimoAnno != 0)
 					{
-						patrimonioElement.setAttribute("acquisti-ultimo-anno", ""
-								+ acquistiUltimoAnno);
+						patrimonioElement.setAttribute("acquisti-ultimo-anno", "" + acquistiUltimoAnno);
 					}
 					patrimonioElement.setText(nome);
 					biblioteca.addContent(patrimonioElement);
@@ -361,8 +355,7 @@ public class OpenData
 			e.printStackTrace();
 		}
 		partialStop = System.nanoTime();
-		log.info("Elaborazione patrimonio terminata in "
-				+ (partialStop - partialStart) / 1000000000 + " secondi");
+		log.info("Elaborazione patrimonio terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
 		return doc;
 	}
 
@@ -398,8 +391,7 @@ public class OpenData
 				limit--;
 				biblioteca = new Element("biblioteca");
 				biblioteca.setAttribute(labelIsil, bibs.getString("isil"));
-				biblioteca.setAttribute("denominazione",
-						bibs.getString("denominazione"));
+				biblioteca.setAttribute("denominazione", bibs.getString("denominazione"));
 				stmt.setInt(1, bibs.getInt("id"));
 				bib = stmt.executeQuery();
 				boolean ok = false;
@@ -415,8 +407,7 @@ public class OpenData
 					element.addContent(denominazione);
 					if(descrizione != null && descrizione.trim() != "")
 					{
-						element.addContent(new Element("descrizione").setText(descrizione
-								.trim()));
+						element.addContent(new Element("descrizione").setText(descrizione.trim()));
 					}
 					if(dewey != null && dewey.trim() != "")
 					{
@@ -439,8 +430,7 @@ public class OpenData
 			e.printStackTrace();
 		}
 		partialStop = System.nanoTime();
-		log.info("Elaborazione fondi speciali terminata in "
-				+ (partialStop - partialStart) / 1000000000 + " secondi");
+		log.info("Elaborazione fondi speciali terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
 		return doc;
 	}
 
@@ -477,8 +467,7 @@ public class OpenData
 				limit--;
 				biblioteca = new Element("biblioteca");
 				biblioteca.setAttribute(labelIsil, bibs.getString("isil"));
-				biblioteca.setAttribute("denominazione",
-						bibs.getString("denominazione"));
+				biblioteca.setAttribute("denominazione", bibs.getString("denominazione"));
 				stmt.setInt(1, bibs.getInt("id"));
 				bib = stmt.executeQuery();
 				boolean ok = false;
@@ -505,59 +494,98 @@ public class OpenData
 			e.printStackTrace();
 		}
 		partialStop = System.nanoTime();
-		log.info("Elaborazione contatti terminata in "
-				+ (partialStop - partialStart) / 1000000000 + " secondi");
+		log.info("Elaborazione contatti terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
 		return doc;
 	}
 
 	public String tipologie()
 	{
+		ResultSet bibs;
+		ResultSet bib;
+		PreparedStatement stmt;
 		String query = qconfig.getProperty("tipologie.query");
-		ResultSet rs = db.select(query);
+		log.debug("Query: " + query);
+		stmt = db.prepare(query);
+		bibs = db.select(qconfig.getProperty("censite.query"));
+		String isil;
+		int idBib;
 		ResultSetMetaData rsmd;
 		StringWriter output = new StringWriter();
 		PrintWriter pw;
+		int limit = Integer.MAX_VALUE;
 		log.info("Elaborazione tipologie");
+		String header = csvBOM;
+		String row = "";
+		String cell = "";
+		try
+		{
+			limit = Integer.parseInt(config.getProperty("censite.limit"));
+		}
+		catch(NumberFormatException e)
+		{
+			log.warn("Massimo numero di biblioteche da elaborare ignorato, si userà il massimo intero possibile");
+		}
 		partialStart = System.nanoTime();
 		try
 		{
 			pw = new PrintWriter(output);
-			rsmd = rs.getMetaData();
-			int columns = rsmd.getColumnCount();
-			int i;
-			String header = csvBOM;
-			String row = "";
-			String cell = "";
-			for(i = 1; i < columns; i++)
+			boolean headerOk = false;
+			while(bibs.next() && limit > 0)
 			{
-				header += csvTS + rsmd.getColumnLabel(i) + csvTS + csvFS;
-			}
-			header += csvTS + rsmd.getColumnLabel(i) + csvTS;
-			pw.println(header);
-			while(rs.next())
-			{
-				row = "";
-				for(i = 1; i < columns; i++)
+				limit--;
+				isil = bibs.getString("isil");
+				idBib = bibs.getInt("id");
+				pw = new PrintWriter(output);
+				stmt.setInt(1, idBib);
+				bib = stmt.executeQuery();
+				rsmd = bib.getMetaData();
+				int columns = rsmd.getColumnCount();
+				int i;
+				while(bib.next() && limit-- > 0)
 				{
-					cell = rs.getString(i);
-					if(cell == null)
+					log.debug("Elaborazione " + isil);
+					try
 					{
-						cell = "";
+
+// una sola volta si crea l'header
+
+						if(!headerOk)
+						{
+							for(i = 1; i < columns; i++)
+							{
+								header += csvTS + rsmd.getColumnLabel(i) + csvTS + csvFS;
+							}
+							header += csvTS + rsmd.getColumnLabel(i) + csvTS;
+							pw.println(header);
+							headerOk = true;
+						}
+						row = "";
+						for(i = 1; i < columns; i++)
+						{
+							cell = bib.getString(i);
+							if(cell == null)
+							{
+								cell = "";
+							}
+							row += csvTS + cell.trim() + csvTS + csvFS;
+						}
+						row += csvTS + bib.getString(i) + csvTS;
+						pw.println(row);
 					}
-					row += csvTS + cell.trim() + csvTS + csvFS;
+					catch(SQLException e)
+					{
+						log.error("Errore SQL: " + e.getMessage());
+					}
+					pw.close();
 				}
-				row += csvTS + rs.getString(i) + csvTS;
-				pw.println(row);
 			}
-			pw.close();
 		}
 		catch(SQLException e)
 		{
 			log.error("Errore SQL: " + e.getMessage());
 		}
 		partialStop = System.nanoTime();
-		log.info("Elaborazione tipologie terminata in "
-				+ (partialStop - partialStart) / 1000000000 + " secondi");
+		log.info("Elaborazione tipologie terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
 		return output.getBuffer().toString();
 	}
 
@@ -592,8 +620,7 @@ public class OpenData
 				limit--;
 				biblioteca = new Element("biblioteca");
 				biblioteca.setAttribute("isil", bibs.getString("isil"));
-				biblioteca.setAttribute("denominazione",
-						bibs.getString("denominazione"));
+				biblioteca.setAttribute("denominazione", bibs.getString("denominazione"));
 				stmt.setInt(1, bibs.getInt("id"));
 				bib = stmt.executeQuery();
 				boolean ok = false;
@@ -622,8 +649,7 @@ public class OpenData
 			e.printStackTrace();
 		}
 		partialStop = System.nanoTime();
-		log.info("Elaborazione specializzazioni terminata in "
-				+ (partialStop - partialStart) / 1000000000 + " secondi");
+		log.info("Elaborazione specializzazioni terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
 		return doc;
 	}
 
@@ -704,11 +730,8 @@ public class OpenData
 		}
 		zos = new ZipOutputStream(fos);
 
-		String[] fileNames = { config.getProperty("territorio.file"),
-				config.getProperty("contatti.file"),
-				config.getProperty("patrimonio.file"),
-				config.getProperty("fondi-speciali.file"),
-				config.getProperty("tipologie.file") };
+		String[] fileNames = { config.getProperty("territorio.file"), config.getProperty("contatti.file"),
+				config.getProperty("patrimonio.file"), config.getProperty("fondi-speciali.file"), config.getProperty("tipologie.file") };
 
 		log.info("Compressione di tutti i file...");
 		for(String fileName : fileNames)
@@ -760,145 +783,6 @@ public class OpenData
 
 	}
 
-	public String territorioOld()
-	{
-		String query = config.getProperty("territorioOld.query");
-		log.debug("Query: " + query);
-		ResultSet bib;
-		ResultSetMetaData rsmd;
-		StringWriter output = new StringWriter();
-		PrintWriter pw;
-		String isil = "", row = null, cell, contatto, note;
-		String tel = "", fax = "", mail = "", url = "";
-		String oldIsil = "";
-		int tipo;
-		int limit = Integer.MAX_VALUE;
-		int columns = 0;
-		int i;
-		log.info("Elaborazione territorio");
-		partialStart = System.nanoTime();
-		try
-		{
-			limit = Integer.parseInt(config.getProperty("censite.limit"));
-		}
-		catch(NumberFormatException e)
-		{
-			log.warn("Massimo numero di biblioteche da elaborare ignorato, si userà il massimo intero possibile");
-		}
-		try
-		{
-			boolean headerOk = false;
-			pw = new PrintWriter(output);
-			bib = db.select(query);
-			while(bib.next() && limit-- > 0)
-			{
-				isil = bib.getString(1);
-				try
-				{
-
-					// una sola volta si crea l'header
-
-					if(!headerOk)
-					{
-						rsmd = bib.getMetaData();
-						columns = rsmd.getColumnCount() - 3;
-						String header = csvBOM;
-						row = "";
-						cell = "";
-						for(i = 1; i < columns; i++)
-						{
-							header += wrap(rsmd.getColumnLabel(i));
-						}
-						header += wrap(rsmd.getColumnLabel(i));
-
-						// si aggiungono all'header quattro campi che saranno riempiti in
-						// base ai tipi di contatti rinvenuti
-
-						header += wrap("telefono");
-						header += wrap("fax");
-						header += wrap("email");
-						header += wrap("url", true);
-						pw.println(header);
-						headerOk = true;
-					}
-
-					if(!isil.equals(oldIsil))
-					{
-						if(oldIsil != "")
-						{
-							row += wrap(tel) + wrap(fax) + wrap(mail) + wrap(url, true);
-							pw.println(row);
-							pw.flush();
-						}
-						row = "";
-						for(i = 1; i < columns; i++)
-						{
-							cell = bib.getString(i);
-							if(cell == null)
-							{
-								cell = "";
-							}
-							row += wrap(cell.trim());
-						}
-						row += wrap(bib.getString(i));
-						oldIsil = isil;
-						tel = fax = mail = url = "";
-					}
-
-					// vanno gestiti i possibili contatti
-					contatto = bib.getString("contatto");
-
-					note = bib.getString("note");
-					tipo = bib.getInt("tipo");
-					if(contatto != null)
-					{
-						contatto = contatto.trim();
-						if(note == null || note.trim() == "")
-						{
-							/*
-							 * i contatti vanno selezionati per codice, perché il right join
-							 * non funziona se si estraggono anche i codici e le descrizioni
-							 */
-							switch(tipo)
-							{
-								case 1:
-									// telefono
-									if(tel == "") tel = contatto;
-									break;
-								case 2:
-									// fax
-									if(fax == "") fax = contatto;
-									break;
-								case 3:
-									// mail
-									if(mail == "") mail = contatto;
-									break;
-								case 5:
-									// url
-									if(url == "") url = contatto;
-									break;
-								default:
-									break;
-							}
-						}
-					}
-				}
-				catch(SQLException e)
-				{
-					log.error("Errore SQL: " + e.getMessage());
-				}
-			}
-			pw.close();
-		}
-		catch(SQLException e)
-		{
-			log.error("Errore SQL: " + e.getMessage());
-		}
-		partialStop = System.nanoTime();
-		log.info("Elaborazione territorio terminata in "
-				+ (partialStop - partialStart) / 1000000000 + " secondi");
-		return output.getBuffer().toString();
-	}
 
 	public static void main(String[] args)
 	{
@@ -972,7 +856,6 @@ public class OpenData
 			od.log.error("Errore di I/O: " + e.getMessage());
 		}
 		od.totalStop = System.nanoTime();
-		od.log.info("Esecuzione terminata in " + (od.totalStop - od.totalStart)
-				/ 1000000000 + " secondi");
+		od.log.info("Esecuzione terminata in " + (od.totalStop - od.totalStart) / 1000000000 + " secondi");
 	}
 }

@@ -85,8 +85,8 @@ censite.query = \
 'IT-UD0216', \
 'IT-VE0032', \
 'IT-VI0173', \
-'IT-VV0050', \
-'IT-VR0131' \
+'IT-VR0131', \
+'IT-VV0050' \
 ) \	ORDER BY isil ASC
 
 territorio.query = \
@@ -202,6 +202,25 @@ fondi-speciali.query = \
   	AND `biblioteca_has_fondi_speciali`.`id_fondi_speciali` = `fondi_speciali`.`id_fondi_speciali`
 		
 tipologie.query = \
+	SELECT \
+		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as 'codice isil', \
+		b.denominazione_ufficiale as 'denominazione biblioteca', \
+		`tipologia_funzionale`.`descrizione` AS `tipologia funzionale`, \
+		`ente`.`denominazione` AS `denominazione ente`, \
+		`ente_tipologia_amministrativa`.`descrizione` AS `tipologia amministrativa` \
+	FROM \
+		`stato_catalogazione` RIGHT OUTER JOIN `biblioteca` as b ON `stato_catalogazione`.`id_biblioteca` = `b`.`id_biblioteca`, \
+		`ente` AS `ente`, \
+		`ente_tipologia_amministrativa` AS `ente_tipologia_amministrativa`, \
+		`tipologia_funzionale` AS `tipologia_funzionale` \
+	WHERE \
+		`b`.`id_ente` = `ente`.`id_ente` \
+		AND `ente`.`id_ente_tipologia_amministrativa` = `ente_tipologia_amministrativa`.`id_ente_tipologia_amministrativa` \
+		AND `b`.`id_tipologia_funzionale` = `tipologia_funzionale`.`id_tipologia_funzionale` \
+		AND `b`.`id_biblioteca` = ? \
+	order by concat('IT-', isil_provincia, lpad(isil_numero, 4, 0))
+
+tipologieOld.query = \
 	SELECT \
 		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as 'codice isil', \
 		b.denominazione_ufficiale as 'denominazione biblioteca', \
