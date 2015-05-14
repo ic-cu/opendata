@@ -64,7 +64,7 @@ public class OpenData
 		PrintWriter pw;
 		WriterAppender wa;
 		log = Logger.getLogger("OPENDATA");
-		log.setLevel(Level.INFO);
+		log.setLevel(Level.DEBUG);
 		pl = new PatternLayout(config.getProperty("log.pattern"));
 		lf = new File(config.getProperty("log.file"));
 		pw = new PrintWriter(lf);
@@ -171,6 +171,7 @@ public class OpenData
 				bib = stmt.executeQuery();
 				while(bib.next() && limit-- > 0)
 				{
+					log.debug("Elaborazione " + isil);
 					try
 					{
 
@@ -204,9 +205,11 @@ public class OpenData
 
 						if(!isil.equals(oldIsil))
 						{
+							log.debug(denominazione);
 							if(oldIsil != "")
 							{
 								row += wrap(tel) + wrap(fax) + wrap(mail) + wrap(url, true);
+								log.debug("oldISIL non null: " + row);
 								pw.println(row);
 								pw.flush();
 							}
@@ -221,6 +224,7 @@ public class OpenData
 								}
 								row += wrap(cell.trim());
 							}
+							log.debug("Nuova riga: " + row);
 							row += wrap(bib.getString(i));
 							oldIsil = isil;
 							tel = fax = mail = url = "";
@@ -270,6 +274,10 @@ public class OpenData
 					}
 				}
 			}
+			row += wrap(tel) + wrap(fax) + wrap(mail) + wrap(url, true);
+			log.debug("Ultimo ISIL: " + row);
+			pw.println(row);
+			pw.flush();
 		}
 		catch(SQLException e)
 		{
