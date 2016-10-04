@@ -18,6 +18,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
+import javax.swing.JEditorPane;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
@@ -28,6 +30,12 @@ import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
 import sql.DB;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 public class OpenData
 {
@@ -40,6 +48,21 @@ public class OpenData
 	private long totalStart, totalStop, partialStart, partialStop;
 	private SimpleDateFormat dateStampFormat;
 	private String labelIsil;
+
+/*
+ * Alcuni oggetti relativi all'output JSON, che viene creato durante tutto il
+ * resto del processo ed estratto solo al termine di tutte le procedure, se le
+ * risorse sono sufficienti.
+ */
+
+	private JsonObject jExport;
+	private JsonArray jBibs;
+	private Gson gson;
+
+	public String getAnagraficaJson()
+	{
+		return gson.toJson(jExport);
+	}
 
 	private String wrap(String field, boolean last)
 	{
@@ -64,7 +87,7 @@ public class OpenData
 		PrintWriter pw;
 		WriterAppender wa;
 		log = Logger.getLogger("OPENDATA");
-		log.setLevel(Level.DEBUG);
+		log.setLevel(Level.INFO);
 		pl = new PatternLayout(config.getProperty("log.pattern"));
 		lf = new File(config.getProperty("log.file"));
 		pw = new PrintWriter(lf);
@@ -114,6 +137,9 @@ public class OpenData
 		File tDir = null;
 		tDir = new File(tempDir);
 		tDir.mkdirs();
+		jExport = new JsonObject();
+		jExport.addProperty("data-export", dateStampFormat.format(new Date()));
+		gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
 		csvFS = config.getProperty("csv.fs");
 		csvTS = config.getProperty("csv.ts");
@@ -783,6 +809,148 @@ public class OpenData
 
 	}
 
+	public void anagraficaJson()
+	{
+		ResultSet bibs;
+		ResultSet bib;
+		PreparedStatement stmt = null;
+		String query = null;
+		String isil = null;
+		int idBib = 0;
+		int count = 0;
+		log.debug("Query: " + query);
+		bibs = db.select(qconfig.getProperty("censite.query"));
+		int limit = Integer.MAX_VALUE;
+		log.info("Elaborazione contatti");
+		partialStart = System.nanoTime();
+		try
+		{
+			limit = Integer.parseInt(config.getProperty("censite.limit"));
+		}
+		catch(NumberFormatException e)
+		{
+			log.warn("Massimo numero di biblioteche da elaborare ignorato, si userà il massimo intero possibile");
+		}
+		try
+		{
+			jBibs = new JsonArray();
+			while(bibs.next() && limit > 0)
+			{
+				limit--;
+				count++;
+				isil = bibs.getString("isil");
+				idBib = bibs.getInt("id");
+				JsonObject jBib = new JsonObject();
+				jBib.addProperty("isil", isil);
+				
+/*
+ * Altri codici, raggruppati in un array di coppie				
+ */
+
+				query = qconfig.getProperty("codici.query");
+				log.debug(query);
+				stmt = db.prepare(query);
+				stmt.setInt(1, idBib);
+				bib = stmt.executeQuery();
+				JsonArray jCodici = new JsonArray();
+				while(bib.next())
+				{
+					String tipo = bib.getString("tipo");
+					String codice = bib.getString("codice");
+					JsonObject jCodice = new JsonObject();
+					jCodice.addProperty("tipo", tipo);
+					jCodice.addProperty("codice", codice);
+					jCodici.add(jCodice);
+				}
+				jBib.add("codici-identificativi", jCodici);
+
+/*
+ * Cominciano con le denominazioni. Quella ufficiale è già nella query "censite"
+ */
+
+				JsonObject jNomi = new JsonObject();
+				jNomi.addProperty("ufficiale", bibs.getString("denominazione"));
+
+// Denominazioni precedenti, si aggiungeranno a jNomi
+
+				query = qconfig.getProperty("denominazioni.precedenti.query");
+				log.debug(query);
+				stmt = db.prepare(query);
+				stmt.setInt(1, idBib);
+				bib = stmt.executeQuery();
+				JsonArray jNomiPrecedenti = new JsonArray();
+				while(bib.next())
+				{
+					jNomiPrecedenti.add(new JsonPrimitive(bib.getString("denominazione")));
+				}
+				jNomi.add("precedenti", jNomiPrecedenti);
+
+// Denominazioni alternative, trattate come le precedenti
+
+				query = qconfig.getProperty("denominazioni.alternative.query");
+				stmt = db.prepare(query);
+				stmt.setInt(1, idBib);
+				bib = stmt.executeQuery();
+				JsonArray jNomiAlternativi = new JsonArray();
+				while(bib.next())
+				{
+					jNomiAlternativi.add(new JsonPrimitive(bib.getString("denominazione")));
+				}
+				jNomi.add("alternative", jNomiAlternativi);
+
+// La proprietà "denominazioni" si aggiunge come array a jBib
+
+				jBib.add("denominazioni", jNomi);
+
+				query = qconfig.getProperty("json.anagrafica.query");
+				stmt = db.prepare(query);
+				stmt.setInt(1, idBib);
+				bib = stmt.executeQuery();
+				boolean ok = false;
+				while(bib.next())
+				{
+					ok = true;
+					jBib.addProperty("indirizzo", bib.getString("indirizzo"));
+					if(bib.getString("frazione") != null && bib.getString("frazione") != "")
+					{
+						jBib.addProperty("frazione", bib.getString("frazione"));
+					}
+					jBib.addProperty("cap", bib.getString("cap"));
+					JsonObject jComune = new JsonObject();
+					jComune.addProperty("nome", bib.getString("comune"));
+					jComune.addProperty("istat", bib.getString("codice istat comune"));
+					jBib.add("comune", jComune);
+					JsonObject jProvincia = new JsonObject();
+					jProvincia.addProperty("nome", bib.getString("provincia"));
+					jProvincia.addProperty("istat", bib.getString("codice istat provincia"));
+					jBib.add("provincia", jProvincia);
+					jBib.addProperty("regione", bib.getString("regione"));
+					JsonArray jCoordinate = new JsonArray();
+					String lat = bib.getString("latitudine");
+					String lon = bib.getString("longitudine");
+					if(lat != null && lat != "" && lon != null && lon != "")
+					{
+						jCoordinate.add(new JsonPrimitive(lat));
+						jCoordinate.add(new JsonPrimitive(lon));
+					}
+					else
+					{
+						log.warn(isil + ": una delle coordinate è vuota o null");
+					}
+					jBib.add("coordinate", jCoordinate);
+				}
+				if(ok) jBibs.add(jBib);
+			}
+			jExport.addProperty("biblioteche-esportate", count);
+			jExport.add("biblioteche", jBibs);
+		}
+		catch(SQLException e)
+		{
+			e.printStackTrace();
+		}
+		partialStop = System.nanoTime();
+		log.info("Elaborazione contatti terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
+	}
 
 	public static void main(String[] args)
 	{
@@ -790,6 +958,7 @@ public class OpenData
 		od.log.info("Creazione file in formati open data");
 		System.gc();
 		od.totalStart = System.nanoTime();
+
 		try
 		{
 			XMLOutputter xo = new XMLOutputter(Format.getPrettyFormat());
@@ -843,6 +1012,15 @@ public class OpenData
 				tFile = od.config.getProperty("specializzazioni.file");
 				pw = new PrintWriter(tDir + tFile);
 				xo.output(doc, pw);
+				od.zip(tFile);
+			}
+			if(od.config.getProperty("anagrafica.json") != null)
+			{
+				tFile = od.config.getProperty("anagrafica.json.file");
+				pw = new PrintWriter(tDir + tFile);
+				od.anagraficaJson();
+				pw.println(od.getAnagraficaJson());
+				pw.close();
 				od.zip(tFile);
 			}
 			od.zip();

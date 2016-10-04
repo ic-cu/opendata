@@ -176,3 +176,60 @@ specializzazioni.query = \
 		`dewey_libero`.`id_biblioteca` = ? \
 		AND `dewey_libero`.`id_dewey` = `dewey`.`id_dewey` \
 	order by `dewey`.`id_dewey`
+	
+codici.query = \
+	SELECT \
+		`c`.`valore` AS `codice`, \
+		`ct`.`descrizione` AS `tipo` \
+	FROM \
+		`codici` AS `c`, \
+		`codici_tipo` AS `ct` \
+	WHERE \
+		`c`.`id_codici` = `ct`.`id_codici` \
+		AND `c`.`id_biblioteca` = ? \
+  ORDER BY `ct`.`descrizione`
+  
+denominazioni.precedenti.query = \
+	SELECT \
+		`d`.`denominazione` \
+	FROM \
+		`denominazioni_precedenti` AS `d` \
+	WHERE \
+		`d`.`id_biblioteca` = ? \
+  ORDER BY `d`.`denominazione`
+  
+denominazioni.alternative.query = \
+	SELECT \
+		`d`.`denominazione` \
+	FROM \
+		`denominazioni_alternative` AS `d` \
+	WHERE \
+		`d`.`id_biblioteca` = ? \
+  ORDER BY `denominazione`
+  
+json.anagrafica.query = \
+	select \
+		b.`indirizzo`, \
+		`b`.`frazione`, \
+		`b`.`cap`, \
+		`c`.`denominazione` AS `comune`, \
+		concat('', lpad(`c`.`codice_istat`, 6, 0)) AS `codice istat comune`, \
+		`p`.`denominazione` AS `provincia`, \
+		`r`.`denominazione` AS `regione`, \
+		concat('', lpad(`p`.`codice_istat`, 3, 0)) AS `codice istat provincia`, \
+		replace(`g`.`latitudine`, '.', ',') as latitudine, \
+		replace(`g`.`longitudine`, '.', ',') as longitudine \
+	FROM \
+		`biblioteca` AS `b`, \
+ 		`comune` AS `c`, \
+		`provincia` AS `p`, \
+		`regione` AS `r`, \
+		`geolocalizzazione` AS `g` \
+	WHERE \
+		`b`.`id_comune` = `c`.`id_comune` \
+		AND `c`.`id_provincia` = `p`.`id_provincia` \
+		AND `p`.`id_regione` = `r`.`id_regione` \
+		AND `g`.`id_biblioteca` = `b`.`id_biblioteca` \
+		AND `b`.`id_biblioteca` = ? \
+	ORDER BY `comune` ASC, `provincia` ASC
+	
