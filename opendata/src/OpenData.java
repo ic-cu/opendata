@@ -139,7 +139,7 @@ public class OpenData
 		tDir.mkdirs();
 		jExport = new JsonObject();
 		jExport.addProperty("data-export", dateStampFormat.format(new Date()));
-		gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().serializeNulls().create();
 
 		csvFS = config.getProperty("csv.fs");
 		csvTS = config.getProperty("csv.ts");
@@ -842,9 +842,9 @@ public class OpenData
 				idBib = bibs.getInt("id");
 				JsonObject jBib = new JsonObject();
 				jBib.addProperty("isil", isil);
-				
+
 /*
- * Altri codici, raggruppati in un array di coppie				
+ * Altri codici, raggruppati in un array di coppie
  */
 
 				query = qconfig.getProperty("codici.query");
@@ -902,14 +902,15 @@ public class OpenData
 
 				jBib.add("denominazioni", jNomi);
 
+// Anagrafica e territorio
+
 				query = qconfig.getProperty("json.anagrafica.query");
 				stmt = db.prepare(query);
 				stmt.setInt(1, idBib);
 				bib = stmt.executeQuery();
-				boolean ok = false;
+
 				while(bib.next())
 				{
-					ok = true;
 					jBib.addProperty("indirizzo", bib.getString("indirizzo"));
 					if(bib.getString("frazione") != null && bib.getString("frazione") != "")
 					{
@@ -939,8 +940,32 @@ public class OpenData
 					}
 					jBib.add("coordinate", jCoordinate);
 				}
-				if(ok) jBibs.add(jBib);
+
+// Contatti
+
+				query = qconfig.getProperty("contatti.query");
+				stmt = db.prepare(query);
+				stmt.setInt(1, idBib);
+				bib = stmt.executeQuery();
+				JsonArray jContatti = new JsonArray();
+
+				while(bib.next())
+				{
+					JsonObject jContatto = new JsonObject();
+					jContatto.addProperty("tipo", bib.getString("tipo"));
+					jContatto.addProperty("valore", bib.getString("contatto"));
+					jContatto.addProperty("note", bib.getString("note"));
+					jContatti.add(jContatto);
+				}
+				jBib.add("contatti", jContatti);
+
+// Dopo aver completato una biblioteca, si aggiunge a tutte le altre.
+
+				jBibs.add(jBib);
 			}
+
+// Si aggiunge all'export prima il numero di biblioteche, poi i loro dati
+
 			jExport.addProperty("biblioteche-esportate", count);
 			jExport.add("biblioteche", jBibs);
 		}
