@@ -31,7 +31,7 @@ censite.limit =
 #fondi-speciali =
 tipologie = 
 #specializzazioni =
-anagrafica.json = 
+json = 
 
 ## nomi dei file di output
 
@@ -42,5 +42,5 @@ fondi-speciali.file = fondi-speciali.xml
 tipologie.file = tipologie.csv
 specializzazioni.file = specializzazioni.xml
 tutto.file = opendata.zip
-anagrafica.json.file = anagrafica.json
+json.file = opendata.json
 
