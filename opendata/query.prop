@@ -51,16 +51,16 @@ territorio.query = \
 	FROM \
 		`contatti` AS `contatti` RIGHT OUTER JOIN \
 		`biblioteca` AS `b` \
-		ON `contatti`.`id_biblioteca` = `b`.`id_biblioteca`, \
+		ON `contatti`.`id_biblioteca` = `b`.`id_biblioteca` \
+		LEFT OUTER JOIN `geolocalizzazione` AS `g` \
+		ON `g`.`id_biblioteca` = `b`.`id_biblioteca`, \
  		`comune` AS `c`, \
 		`provincia` AS `p`, \
-		`regione` AS `r`, \
-		`geolocalizzazione` AS `g` \
+		`regione` AS `r` \
 	WHERE \
 		`b`.`id_comune` = `c`.`id_comune` \
 		AND `c`.`id_provincia` = `p`.`id_provincia` \
 		AND `p`.`id_regione` = `r`.`id_regione` \
-		AND `g`.`id_biblioteca` = `b`.`id_biblioteca` \
 		AND `b`.`id_biblioteca` = ? \
 	ORDER BY `comune` ASC, `provincia` ASC
 	
@@ -249,11 +249,12 @@ json.query = \
 		b.accesso_riservato as riservata, \
 		b.accesso_handicap as handicap \
 	FROM \
-		`biblioteca` AS `b`, \
+		`biblioteca` AS `b` \
+		LEFT OUTER JOIN `geolocalizzazione` AS `g` \
+		ON `g`.`id_biblioteca` = `b`.`id_biblioteca`, \
  		`comune` AS `c`, \
 		`provincia` AS `p`, \
 		`regione` AS `r`, \
-		`geolocalizzazione` AS `g`, \
 		`ente` AS `e`, \
 		`ente_tipologia_amministrativa` AS `ta`, \
 		`tipologia_funzionale` AS `tf` \
@@ -261,7 +262,6 @@ json.query = \
 		`b`.`id_comune` = `c`.`id_comune` \
 		AND `c`.`id_provincia` = `p`.`id_provincia` \
 		AND `p`.`id_regione` = `r`.`id_regione` \
-		AND `g`.`id_biblioteca` = `b`.`id_biblioteca` \
 		AND	`b`.`id_ente` = `e`.`id_ente` \
 		AND `e`.`id_ente_tipologia_amministrativa` = `ta`.`id_ente_tipologia_amministrativa` \
 		AND `b`.`id_tipologia_funzionale` = `tf`.`id_tipologia_funzionale` \
