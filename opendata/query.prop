@@ -161,6 +161,25 @@ tipologie.query = \
 		`b`.`id_ente` = `ente`.`id_ente` \
 		AND `ente`.`id_ente_tipologia_amministrativa` = `ente_tipologia_amministrativa`.`id_ente_tipologia_amministrativa` \
 		AND `b`.`id_tipologia_funzionale` = `tipologia_funzionale`.`id_tipologia_funzionale` \
+		AND `b`.`id_biblioteca` = ? \
+	order by concat('IT-', isil_provincia, lpad(isil_numero, 4, 0))
+
+tipologieOld.query = \
+	SELECT \
+		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as 'codice isil', \
+		b.denominazione_ufficiale as 'denominazione biblioteca', \
+		`tipologia_funzionale`.`descrizione` AS `tipologia funzionale`, \
+		`ente`.`denominazione` AS `denominazione ente`, \
+		`ente_tipologia_amministrativa`.`descrizione` AS `tipologia amministrativa` \
+	FROM \
+		`stato_catalogazione` RIGHT OUTER JOIN `biblioteca` as b ON `stato_catalogazione`.`id_biblioteca` = `b`.`id_biblioteca`, \
+		`ente` AS `ente`, \
+		`ente_tipologia_amministrativa` AS `ente_tipologia_amministrativa`, \
+		`tipologia_funzionale` AS `tipologia_funzionale` \
+	WHERE \
+		`b`.`id_ente` = `ente`.`id_ente` \
+		AND `ente`.`id_ente_tipologia_amministrativa` = `ente_tipologia_amministrativa`.`id_ente_tipologia_amministrativa` \
+		AND `b`.`id_tipologia_funzionale` = `tipologia_funzionale`.`id_tipologia_funzionale` \
 		AND `stato_catalogazione`.`id_stato_catalogazione` IS NULL \
 		AND `b`.`id_stato_biblioteca_workflow` != 4 \
 	order by concat('IT-', isil_provincia, lpad(isil_numero, 4, 0))
@@ -179,15 +198,20 @@ specializzazioni.query = \
 	
 codici.query = \
 	SELECT \
-		`c`.`valore` AS `codice`, \
+		`c`.`valore` AS `codice` \
+	FROM \
+		`codici` AS `c` \
+	WHERE \
+		`c`.`id_codici` = ? \
+		AND `c`.`id_biblioteca` = ?
+  
+tipi.codici.query = \
+	SELECT \
+		`ct`.`id_codici` AS `id`, \
 		`ct`.`descrizione` AS `tipo` \
 	FROM \
-		`codici` AS `c`, \
 		`codici_tipo` AS `ct` \
-	WHERE \
-		`c`.`id_codici` = `ct`.`id_codici` \
-		AND `c`.`id_biblioteca` = ? \
-  ORDER BY `ct`.`descrizione`
+  ORDER BY `ct`.`id_codici`
   
 denominazioni.precedenti.query = \
 	SELECT \
@@ -207,7 +231,7 @@ denominazioni.alternative.query = \
 		`d`.`id_biblioteca` = ? \
   ORDER BY `denominazione`
   
-json.anagrafica.query = \
+json.query = \
 	select \
 		b.`indirizzo`, \
 		`b`.`frazione`, \
@@ -218,18 +242,29 @@ json.anagrafica.query = \
 		`r`.`denominazione` AS `regione`, \
 		concat('', lpad(`p`.`codice_istat`, 3, 0)) AS `codice istat provincia`, \
 		replace(`g`.`latitudine`, '.', ',') as latitudine, \
-		replace(`g`.`longitudine`, '.', ',') as longitudine \
+		replace(`g`.`longitudine`, '.', ',') as longitudine, \
+		`tf`.`descrizione` AS `tipologia funzionale`, \
+		`e`.`denominazione` AS `denominazione ente`, \
+		`ta`.`descrizione` AS `tipologia amministrativa`, \
+		b.accesso_riservato as riservata, \
+		b.accesso_handicap as handicap \
 	FROM \
 		`biblioteca` AS `b`, \
  		`comune` AS `c`, \
 		`provincia` AS `p`, \
 		`regione` AS `r`, \
-		`geolocalizzazione` AS `g` \
+		`geolocalizzazione` AS `g`, \
+		`ente` AS `e`, \
+		`ente_tipologia_amministrativa` AS `ta`, \
+		`tipologia_funzionale` AS `tf` \
 	WHERE \
 		`b`.`id_comune` = `c`.`id_comune` \
 		AND `c`.`id_provincia` = `p`.`id_provincia` \
 		AND `p`.`id_regione` = `r`.`id_regione` \
 		AND `g`.`id_biblioteca` = `b`.`id_biblioteca` \
+		AND	`b`.`id_ente` = `e`.`id_ente` \
+		AND `e`.`id_ente_tipologia_amministrativa` = `ta`.`id_ente_tipologia_amministrativa` \
+		AND `b`.`id_tipologia_funzionale` = `tf`.`id_tipologia_funzionale` \
 		AND `b`.`id_biblioteca` = ? \
 	ORDER BY `comune` ASC, `provincia` ASC
 	

@@ -12,13 +12,12 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
-
-import javax.swing.JEditorPane;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -59,7 +58,7 @@ public class OpenData
 	private JsonArray jBibs;
 	private Gson gson;
 
-	public String getAnagraficaJson()
+	public String getJson()
 	{
 		return gson.toJson(jExport);
 	}
@@ -757,7 +756,7 @@ public class OpenData
 		zos = new ZipOutputStream(fos);
 
 		String[] fileNames = { config.getProperty("territorio.file"), config.getProperty("contatti.file"),
-				config.getProperty("patrimonio.file"), config.getProperty("fondi-speciali.file"), config.getProperty("tipologie.file") };
+				config.getProperty("patrimonio.file"), config.getProperty("fondi-speciali.file"), config.getProperty("tipologie.file"), config.getProperty("json.file") };
 
 		log.info("Compressione di tutti i file...");
 		for(String fileName : fileNames)
@@ -809,10 +808,11 @@ public class OpenData
 
 	}
 
-	public void anagraficaJson()
+	public void json()
 	{
 		ResultSet bibs;
 		ResultSet bib;
+		ResultSet tipiCodiciRS;
 		PreparedStatement stmt = null;
 		String query = null;
 		String isil = null;
@@ -821,7 +821,7 @@ public class OpenData
 		log.debug("Query: " + query);
 		bibs = db.select(qconfig.getProperty("censite.query"));
 		int limit = Integer.MAX_VALUE;
-		log.info("Elaborazione contatti");
+		log.info("Estrazione formato JSON");
 		partialStart = System.nanoTime();
 		try
 		{
@@ -838,29 +838,55 @@ public class OpenData
 			{
 				limit--;
 				count++;
-				isil = bibs.getString("isil");
 				idBib = bibs.getInt("id");
 				JsonObject jBib = new JsonObject();
-				jBib.addProperty("isil", isil);
 
 /*
- * Altri codici, raggruppati in un array di coppie
+ * Altri codici, raggruppati in un array di coppie. Per estrarre comunque anche
+ * codici null si costruisce prima un vettore di tipi di codice su cui ciclare
  */
 
-				query = qconfig.getProperty("codici.query");
+				query = qconfig.getProperty("tipi.codici.query");
 				log.debug(query);
-				stmt = db.prepare(query);
-				stmt.setInt(1, idBib);
-				bib = stmt.executeQuery();
-				JsonArray jCodici = new JsonArray();
-				while(bib.next())
+				tipiCodiciRS = db.select(query);
+				ArrayList<String> tipiCodici = new ArrayList<String>();
+				while(tipiCodiciRS.next())
 				{
-					String tipo = bib.getString("tipo");
-					String codice = bib.getString("codice");
-					JsonObject jCodice = new JsonObject();
-					jCodice.addProperty("tipo", tipo);
-					jCodice.addProperty("codice", codice);
-					jCodici.add(jCodice);
+					tipiCodici.add(tipiCodiciRS.getString(2));
+				}
+
+// Il primo codice da aggiungere è sempre l'ISIL, poi si aggiungono
+// eventualmente gli altri. Si preferisce un oggetto con un fissato numero di
+// proprietà piuttosto che un array
+
+				JsonObject jCodici = new JsonObject();
+				isil = bibs.getString("isil");
+				jCodici.addProperty("isil", isil);
+
+				query = qconfig.getProperty("codici.query");
+				stmt = db.prepare(query);
+
+// Per ogni tipo di codice si cerca un eventuale valore per la singola
+// biblioteca.
+
+				for(int i = 0; i < tipiCodici.size(); i++)
+				{
+					stmt.setInt(1, i + 1);
+					stmt.setInt(2, idBib);
+					bib = stmt.executeQuery();
+					String tipo = tipiCodici.get(i);
+					String codice = null;
+
+// Se il resultset ha un elemento per il tipo attuale, teoricamente unico, si
+// aggiunge la coppia (tipo, valore), altrimenti la coppia (tipo, null),
+// essendo null il valore con cui è inizializzata la variabile "codice"
+
+					if(bib.next())
+					{
+						codice = bib.getString("codice");
+						log.debug(tipo + " " + codice);
+					}
+					jCodici.addProperty(tipo, codice);
 				}
 				jBib.add("codici-identificativi", jCodici);
 
@@ -902,15 +928,44 @@ public class OpenData
 
 				jBib.add("denominazioni", jNomi);
 
-// Anagrafica e territorio
+// Ora si cicla su un resultset molto ampio
 
-				query = qconfig.getProperty("json.anagrafica.query");
+				query = qconfig.getProperty("json.query");
 				stmt = db.prepare(query);
 				stmt.setInt(1, idBib);
 				bib = stmt.executeQuery();
 
+// Si comincia il ciclo da tipologie ed ente di appartenenza
+
 				while(bib.next())
 				{
+					jBib.addProperty("tipologia-amministrativa", bib.getString("tipologia amministrativa"));
+					jBib.addProperty("tipologia-funzionale", bib.getString("tipologia funzionale"));
+					jBib.addProperty("ente", bib.getString("denominazione ente"));
+
+// Apertura in generale e a portatori di handicap. Il caso NULL è delicato e va
+// esplicitato, altrimenti si confonde con il false
+
+					if(bib.getString("riservata") != null)
+					{
+						jBib.addProperty("accesso-riservato", bib.getBoolean("riservata"));
+					}
+					else
+					{
+						jBib.addProperty("accesso-riservato", bib.getString("riservata"));
+					}
+
+					if(bib.getString("handicap") != null)
+					{
+						jBib.addProperty("accesso-portatori-handicap", bib.getBoolean("handicap"));
+					}
+					else
+					{
+						jBib.addProperty("accesso-portatori-handicap", bib.getString("handicap"));
+					}
+
+// Indirizzo
+
 					jBib.addProperty("indirizzo", bib.getString("indirizzo"));
 					if(bib.getString("frazione") != null && bib.getString("frazione") != "")
 					{
@@ -926,6 +981,9 @@ public class OpenData
 					jProvincia.addProperty("istat", bib.getString("codice istat provincia"));
 					jBib.add("provincia", jProvincia);
 					jBib.addProperty("regione", bib.getString("regione"));
+
+// Coordinate
+
 					JsonArray jCoordinate = new JsonArray();
 					String lat = bib.getString("latitudine");
 					String lon = bib.getString("longitudine");
@@ -1039,12 +1097,12 @@ public class OpenData
 				xo.output(doc, pw);
 				od.zip(tFile);
 			}
-			if(od.config.getProperty("anagrafica.json") != null)
+			if(od.config.getProperty("json") != null)
 			{
-				tFile = od.config.getProperty("anagrafica.json.file");
+				tFile = od.config.getProperty("json.file");
 				pw = new PrintWriter(tDir + tFile);
-				od.anagraficaJson();
-				pw.println(od.getAnagraficaJson());
+				od.json();
+				pw.println(od.getJson());
 				pw.close();
 				od.zip(tFile);
 			}
