@@ -13,6 +13,7 @@ temp.dir = .
 log.file = opendata.log
 log.pattern = %d{yyyy-MM-dd HH:mm:ss} %p %C{1}.%M - %m%n
 dateStamp.pattern = yyyy-MM-dd'T'HH:mm:ss
+date.pattern = yyyy-MM-dd
 
 ## varie label che è meglio esternalizzare
 label.xml.isil = codice-isil
@@ -25,10 +26,10 @@ censite.limit =
 ## una serie di flag per indicare quali informazioni trattare; se non presenti,
 ## indicano che una certa informazione non va trattata
 
-#territorio =
-#contatti =
-#patrimonio =
-#fondi-speciali =
+territorio =
+contatti =
+patrimonio =
+fondi-speciali =
 tipologie = 
 #specializzazioni =
 json = 
@@ -42,5 +43,4 @@ fondi-speciali.file = fondi-speciali.xml
 tipologie.file = tipologie.csv
 specializzazioni.file = specializzazioni.xml
 tutto.file = opendata.zip
-json.file = opendata.json
-
+json.file = biblioteche.json
