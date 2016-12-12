@@ -138,7 +138,6 @@ public class OpenData
 		tDir = new File(tempDir);
 		tDir.mkdirs();
 		jExport = new JsonObject();
-		jExport.addProperty("data-export", dateStampFormat.format(new Date()));
 		gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().serializeNulls().create();
 
 		csvFS = config.getProperty("csv.fs");
@@ -988,20 +987,22 @@ public class OpenData
 						jAccesso.addProperty("portatori-handicap", bib.getString("handicap"));
 					}
 
-// Indirizzo
+// Indirizzo, come contenitore
+					
+					JsonObject jIndirizzo = new JsonObject();
 
-					jBib.addProperty("indirizzo", bib.getString("indirizzo"));
-					jBib.addProperty("frazione", bib.getString("frazione"));
-					jBib.addProperty("cap", bib.getString("cap"));
+					jIndirizzo.addProperty("via-piazza", bib.getString("indirizzo"));
+					jIndirizzo.addProperty("frazione", bib.getString("frazione"));
+					jIndirizzo.addProperty("cap", bib.getString("cap"));
 					JsonObject jComune = new JsonObject();
 					jComune.addProperty("nome", bib.getString("comune"));
 					jComune.addProperty("istat", bib.getString("codice istat comune"));
-					jBib.add("comune", jComune);
+					jIndirizzo.add("comune", jComune);
 					JsonObject jProvincia = new JsonObject();
 					jProvincia.addProperty("nome", bib.getString("provincia"));
 					jProvincia.addProperty("istat", bib.getString("codice istat provincia"));
-					jBib.add("provincia", jProvincia);
-					jBib.addProperty("regione", bib.getString("regione"));
+					jIndirizzo.add("provincia", jProvincia);
+					jIndirizzo.addProperty("regione", bib.getString("regione"));
 
 // Coordinate
 
@@ -1017,7 +1018,8 @@ public class OpenData
 					{
 						log.warn(isil + ": una delle coordinate è vuota o null");
 					}
-					jBib.add("coordinate", jCoordinate);
+					jIndirizzo.add("coordinate", jCoordinate);
+					jBib.add("indirizzo", jIndirizzo);
 				}
 
 // Contatti
@@ -1049,7 +1051,10 @@ public class OpenData
 
 // Si aggiunge all'export prima il numero di biblioteche, poi i loro dati
 
-			jExport.addProperty("biblioteche-esportate", count);
+			JsonObject jMeta = new JsonObject();
+			jMeta.addProperty("data-estrazione", dateStampFormat.format(new Date()));
+			jMeta.addProperty("biblioteche-estratte", count);
+			jExport.add("metadati", jMeta);
 			jExport.add("biblioteche", jBibs);
 		}
 		catch(SQLException e)
