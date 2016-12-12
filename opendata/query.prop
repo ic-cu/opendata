@@ -5,6 +5,8 @@ censite.query = \
 	select \
 		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as isil, \
 		b.denominazione_ufficiale as denominazione, \
+		b.catalogazione_data_censimento AS `data-censimento`, \
+		b.catalogazione_data_modifica AS `data-aggiornamento`, \
 		b.id_biblioteca as id \
 	FROM \
 		`stato_catalogazione` RIGHT OUTER JOIN `biblioteca` as b \

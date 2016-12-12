@@ -45,7 +45,7 @@ public class OpenData
 	private String csvFS, csvTS, csvBOM;
 	private Logger log;
 	private long totalStart, totalStop, partialStart, partialStop;
-	private SimpleDateFormat dateStampFormat;
+	private SimpleDateFormat dateStampFormat, dateFormat;
 	private String labelIsil;
 
 /*
@@ -126,6 +126,7 @@ public class OpenData
 		today = sdf.format(new Date());
 
 		dateStampFormat = new SimpleDateFormat(config.getProperty("dateStamp.pattern"));
+		dateFormat = new SimpleDateFormat(config.getProperty("date.pattern"));
 
 		tempDir = config.getProperty("temp.dir");
 
@@ -756,7 +757,8 @@ public class OpenData
 		zos = new ZipOutputStream(fos);
 
 		String[] fileNames = { config.getProperty("territorio.file"), config.getProperty("contatti.file"),
-				config.getProperty("patrimonio.file"), config.getProperty("fondi-speciali.file"), config.getProperty("tipologie.file"), config.getProperty("json.file") };
+				config.getProperty("patrimonio.file"), config.getProperty("fondi-speciali.file"), config.getProperty("tipologie.file"),
+				config.getProperty("json.file") };
 
 		log.info("Compressione di tutti i file...");
 		for(String fileName : fileNames)
@@ -840,9 +842,27 @@ public class OpenData
 				count++;
 				idBib = bibs.getInt("id");
 				JsonObject jBib = new JsonObject();
+				Date dCen = bibs.getDate("data-censimento");
+				Date dAgg = bibs.getDate("data-aggiornamento");
+				if(dCen != null)
+				{
+					jBib.addProperty("anno-censimento", dateFormat.format(dCen).substring(0, 4));
+				}
+				else
+				{
+					jBib.addProperty("anno-censimento", (String) null);
+				}
+				if(dAgg != null)
+				{
+					jBib.addProperty("data-aggiornamento", dateFormat.format(dAgg));
+				}
+				else
+				{
+					jBib.addProperty("data-aggiornamento", (String) null);
+				}
 
 /*
- * Altri codici, raggruppati in un array di coppie. Per estrarre comunque anche
+ * Codici vari, raggruppati in un array di coppie. Per estrarre comunque anche
  * codici null si costruisce prima un vettore di tipi di codice su cui ciclare
  */
 
@@ -935,42 +955,43 @@ public class OpenData
 				stmt.setInt(1, idBib);
 				bib = stmt.executeQuery();
 
-// Si comincia il ciclo da tipologie ed ente di appartenenza
+// Si comincia il ciclo da tipologie ed ente di appartenenza, che però saranno
+// aggiunti in fondo
 
+				String tipAmm = null, ente = null, tipFunz = null;
+				JsonObject jAccesso = new JsonObject();
 				while(bib.next())
 				{
-					jBib.addProperty("tipologia-amministrativa", bib.getString("tipologia amministrativa"));
-					jBib.addProperty("tipologia-funzionale", bib.getString("tipologia funzionale"));
-					jBib.addProperty("ente", bib.getString("denominazione ente"));
+					tipAmm = bib.getString("tipologia amministrativa");
+					ente = bib.getString("denominazione ente");
+					tipFunz = bib.getString("tipologia funzionale");
 
 // Apertura in generale e a portatori di handicap. Il caso NULL è delicato e va
-// esplicitato, altrimenti si confonde con il false
+// esplicitato, altrimenti si confonde con il false. Anche questi dati sono
+// aggiunti alla fine
 
 					if(bib.getString("riservata") != null)
 					{
-						jBib.addProperty("accesso-riservato", bib.getBoolean("riservata"));
+						jAccesso.addProperty("riservato", bib.getBoolean("riservata"));
 					}
 					else
 					{
-						jBib.addProperty("accesso-riservato", bib.getString("riservata"));
+						jAccesso.addProperty("riservato", bib.getString("riservata"));
 					}
 
 					if(bib.getString("handicap") != null)
 					{
-						jBib.addProperty("accesso-portatori-handicap", bib.getBoolean("handicap"));
+						jAccesso.addProperty("portatori-handicap", bib.getBoolean("handicap"));
 					}
 					else
 					{
-						jBib.addProperty("accesso-portatori-handicap", bib.getString("handicap"));
+						jAccesso.addProperty("portatori-handicap", bib.getString("handicap"));
 					}
 
 // Indirizzo
 
 					jBib.addProperty("indirizzo", bib.getString("indirizzo"));
-					if(bib.getString("frazione") != null && bib.getString("frazione") != "")
-					{
-						jBib.addProperty("frazione", bib.getString("frazione"));
-					}
+					jBib.addProperty("frazione", bib.getString("frazione"));
 					jBib.addProperty("cap", bib.getString("cap"));
 					JsonObject jComune = new JsonObject();
 					jComune.addProperty("nome", bib.getString("comune"));
@@ -989,8 +1010,8 @@ public class OpenData
 					String lon = bib.getString("longitudine");
 					if(lat != null && lat != "" && lon != null && lon != "")
 					{
-						jCoordinate.add(new JsonPrimitive(lat));
-						jCoordinate.add(new JsonPrimitive(lon));
+						jCoordinate.add(new JsonPrimitive(Double.parseDouble(lat.replace(",", "."))));
+						jCoordinate.add(new JsonPrimitive(Double.parseDouble(lon.replace(",", "."))));
 					}
 					else
 					{
@@ -1016,6 +1037,10 @@ public class OpenData
 					jContatti.add(jContatto);
 				}
 				jBib.add("contatti", jContatti);
+				jBib.add("accesso", jAccesso);
+				jBib.addProperty("tipologia-amministrativa", tipAmm);
+				jBib.addProperty("tipologia-funzionale", tipFunz);
+				jBib.addProperty("ente", ente);
 
 // Dopo aver completato una biblioteca, si aggiunge a tutte le altre.
 
