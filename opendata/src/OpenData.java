@@ -173,10 +173,11 @@ public class OpenData
 		try
 		{
 			limit = Integer.parseInt(config.getProperty("censite.limit"));
+			log.warn("Elaborazione delle prime " + limit + " biblioteche");
 		}
 		catch(NumberFormatException e)
 		{
-			log.warn("Massimo numero di biblioteche da elaborare ignorato, si userà il massimo intero possibile");
+			log.warn("Elaborazione di tutte le biblioteche");
 		}
 		partialStart = System.nanoTime();
 		try
@@ -333,10 +334,11 @@ public class OpenData
 		try
 		{
 			limit = Integer.parseInt(config.getProperty("censite.limit"));
+			log.warn("Elaborazione delle prime " + limit + " biblioteche");
 		}
 		catch(NumberFormatException e)
 		{
-			log.warn("Massimo numero di biblioteche da elaborare ignorato, si userà il massimo intero possibile");
+			log.warn("Elaborazione di tutte le biblioteche");
 		}
 		try
 		{
@@ -404,10 +406,11 @@ public class OpenData
 		try
 		{
 			limit = Integer.parseInt(config.getProperty("censite.limit"));
+			log.warn("Elaborazione delle prime " + limit + " biblioteche");
 		}
 		catch(NumberFormatException e)
 		{
-			log.warn("Massimo numero di biblioteche da elaborare ignorato, si userà il massimo intero possibile");
+			log.warn("Elaborazione di tutte le biblioteche");
 		}
 		try
 		{
@@ -480,10 +483,11 @@ public class OpenData
 		try
 		{
 			limit = Integer.parseInt(config.getProperty("censite.limit"));
+			log.warn("Elaborazione delle prime " + limit + " biblioteche");
 		}
 		catch(NumberFormatException e)
 		{
-			log.warn("Massimo numero di biblioteche da elaborare ignorato, si userà il massimo intero possibile");
+			log.warn("Elaborazione di tutte le biblioteche");
 		}
 		try
 		{
@@ -545,10 +549,11 @@ public class OpenData
 		try
 		{
 			limit = Integer.parseInt(config.getProperty("censite.limit"));
+			log.warn("Elaborazione delle prime " + limit + " biblioteche");
 		}
 		catch(NumberFormatException e)
 		{
-			log.warn("Massimo numero di biblioteche da elaborare ignorato, si userà il massimo intero possibile");
+			log.warn("Elaborazione di tutte le biblioteche");
 		}
 		partialStart = System.nanoTime();
 		try
@@ -633,10 +638,11 @@ public class OpenData
 		try
 		{
 			limit = Integer.parseInt(config.getProperty("censite.limit"));
+			log.warn("Elaborazione delle prime " + limit + " biblioteche");
 		}
 		catch(NumberFormatException e)
 		{
-			log.warn("Massimo numero di biblioteche da elaborare ignorato, si userà il massimo intero possibile");
+			log.warn("Elaborazione di tutte le biblioteche");
 		}
 		try
 		{
@@ -827,10 +833,11 @@ public class OpenData
 		try
 		{
 			limit = Integer.parseInt(config.getProperty("censite.limit"));
+			log.warn("Elaborazione delle prime " + limit + " biblioteche");
 		}
 		catch(NumberFormatException e)
 		{
-			log.warn("Massimo numero di biblioteche da elaborare ignorato, si userà il massimo intero possibile");
+			log.warn("Elaborazione di tutte le biblioteche");
 		}
 		try
 		{
