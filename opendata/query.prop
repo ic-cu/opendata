@@ -1,7 +1,47 @@
 ## query per le biblioteche "censite"; riporta l'ISIL, ma per query ulteriori
-## viene usato l'id_biblioteca perché indicizzato
+## viene usato l'id_biblioteca perché indicizzato, a differenza dell'ISIL
 
 censite.query = \
+	select \
+		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as isil, \
+		cod.valore as sbn, \
+		b.denominazione_ufficiale as denominazione, \
+		b.catalogazione_data_censimento AS `data-censimento`, \
+		b.catalogazione_data_modifica AS `data-aggiornamento`, \
+		b.id_biblioteca as id \
+	FROM \
+		biblioteca AS b \
+	JOIN ente AS e ON b.id_ente = e.id_ente \
+	LEFT OUTER JOIN `codici` AS `cod` \
+		ON (`cod`.`id_biblioteca` = `b`.`id_biblioteca` AND cod.id_codici = 5 ) \
+	WHERE \
+		b.id_tipologia_funzionale > 0 \
+		AND e.id_ente_tipologia_amministrativa != 0 \
+		AND b.id_biblioteca NOT IN ( SELECT DISTINCT id_biblioteca FROM stato_catalogazione ) \
+		AND b.id_stato_biblioteca_workflow != 4 \
+	ORDER BY isil ASC
+
+# query simile alla precente ma che esclude solo le cancellate; il numero
+# dovrebbe corrispondere a quello degli "indirizzi" sul sito
+
+tutte.query = \
+	select \
+		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as isil, \
+		b.denominazione_ufficiale as denominazione, \
+		b.catalogazione_data_censimento AS `data-censimento`, \
+		b.catalogazione_data_modifica AS `data-aggiornamento`, \
+		b.id_biblioteca as id \
+	FROM \
+		biblioteca AS b \
+	WHERE \
+		b.id_stato_biblioteca_workflow != 4 \
+	ORDER BY isil ASC
+
+# vecchia query che non corrisponde alle censite come indicate sul sito; è
+# stata superata da quella sopra, che corrisponde di solito a meno di un paio 
+# di unità, quindi accettabile
+
+censite.query.old = \
 	select \
 		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as isil, \
 		b.denominazione_ufficiale as denominazione, \
@@ -15,6 +55,9 @@ censite.query = \
 		stato_catalogazione.id_stato_catalogazione IS NULL \
 		AND `b`.`id_stato_biblioteca_workflow` != 4 \
 	ORDER BY isil ASC
+
+# variante delle precedenti basata sulla selezione di specifici ISIL; di uso
+# molto raro, ma conviene tenerla da parte
 
 censite.query.isil = \
 	select \
@@ -35,7 +78,75 @@ censite.query.isil = \
 'IT-VR0131' \
 ) \	ORDER BY isil ASC
 
+# cominciano le query che dipendono dall'id ricavato da qualcuna delle
+# precedenti
+
+# dati territoriali; il livello di dettaglio ha senso
+# solo per le censite
+
 territorio.query = \
+	select \
+		b.`indirizzo`, \
+		`b`.`frazione`, \
+		`b`.`cap`, \
+		`c`.`denominazione` AS `comune`, \
+		concat('', lpad(`c`.`codice_istat`, 6, 0)) AS `codice istat comune`, \
+		`p`.`denominazione` AS `provincia`, \
+		`r`.`denominazione` AS `regione`, \
+		concat('', lpad(`p`.`codice_istat`, 3, 0)) AS `codice istat provincia`, \
+		replace(`g`.`latitudine`, '.', ',') as latitudine, \
+		replace(`g`.`longitudine`, '.', ',') as longitudine, \
+		contatti.valore as contatto, \
+		contatti.note as note, \
+		contatti.id_contatti_tipi as tipo, \
+		cod.valore as SBN \
+	FROM \
+		`contatti` AS `contatti` RIGHT OUTER JOIN \
+		`biblioteca` AS `b` \
+		ON `contatti`.`id_biblioteca` = `b`.`id_biblioteca` \
+		LEFT OUTER JOIN `geolocalizzazione` AS `g` \
+		ON `g`.`id_biblioteca` = `b`.`id_biblioteca` \
+ 		LEFT OUTER JOIN `codici` AS `cod` \
+		ON (`cod`.`id_biblioteca` = `b`.`id_biblioteca` AND cod.id_codici = 5 ), \
+ 		`comune` AS `c`, \
+		`provincia` AS `p`, \
+		`regione` AS `r` \
+	WHERE \
+		`b`.`id_comune` = `c`.`id_comune` \
+		AND `c`.`id_provincia` = `p`.`id_provincia` \
+		AND `p`.`id_regione` = `r`.`id_regione` \
+		AND `b`.`id_biblioteca` = ? \
+	ORDER BY `comune` ASC, `provincia` ASC
+
+# query simile a territorio.query, ma con meno dettagli
+
+indirizzi.query = \
+	select \
+		b.`indirizzo`, \
+		`b`.`frazione`, \
+		`b`.`cap`, \
+		`c`.`denominazione` AS `comune`, \
+		concat('', lpad(`c`.`codice_istat`, 6, 0)) AS `codice istat comune`, \
+		`p`.`denominazione` AS `provincia`, \
+		`r`.`denominazione` AS `regione`, \
+		concat('', lpad(`p`.`codice_istat`, 3, 0)) AS `codice istat provincia`, \
+		replace(`g`.`latitudine`, '.', ',') as latitudine, \
+		replace(`g`.`longitudine`, '.', ',') as longitudine \
+	FROM \
+		`biblioteca` AS `b` \
+		LEFT OUTER JOIN `geolocalizzazione` AS `g` \
+		ON `g`.`id_biblioteca` = `b`.`id_biblioteca`, \
+ 		`comune` AS `c`, \
+		`provincia` AS `p`, \
+		`regione` AS `r` \
+	WHERE \
+		`b`.`id_comune` = `c`.`id_comune` \
+		AND `c`.`id_provincia` = `p`.`id_provincia` \
+		AND `p`.`id_regione` = `r`.`id_regione` \
+		AND `b`.`id_biblioteca` = ? \
+	ORDER BY `comune` ASC, `provincia` ASC
+
+territorio.query.nosbn = \
 	select \
 		b.`indirizzo`, \
 		`b`.`frazione`, \
@@ -101,7 +212,7 @@ territorioOld.query = \
 		AND `stato_catalogazione`.`id_stato_catalogazione` IS NULL \
 		AND `b`.`id_stato_biblioteca_workflow` != 4 \
 	ORDER BY `codice isil` ASC, `comune` ASC, `provincia` ASC
-	
+
 patrimonio.query = \
 	SELECT \
 		`patrimonio_specializzazione`.`descrizione` AS `nome`, \

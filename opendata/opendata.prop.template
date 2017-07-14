@@ -17,6 +17,7 @@ date.pattern = yyyy-MM-dd
 
 ## varie label che è meglio esternalizzare
 label.xml.isil = codice-isil
+label.xml.sbn = codice-sbn
 
 ## se non nullo, questo valore è il numero di biblioteche che saranno elaborate
 ## è usato solo in fase di test
@@ -27,6 +28,7 @@ censite.limit =
 ## indicano che una certa informazione non va trattata
 
 territorio =
+indirizzi =
 contatti =
 patrimonio =
 fondi-speciali =
@@ -37,6 +39,7 @@ json =
 ## nomi dei file di output
 
 territorio.file = territorio.csv
+indirizzi.file = indirizzi.csv
 patrimonio.file = patrimonio.xml
 contatti.file = contatti.xml
 fondi-speciali.file = fondi-speciali.xml

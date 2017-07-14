@@ -46,7 +46,7 @@ public class OpenData
 	private Logger log;
 	private long totalStart, totalStop, partialStart, partialStop;
 	private SimpleDateFormat dateStampFormat, dateFormat;
-	private String labelIsil;
+	private String labelIsil, labelSbn;
 
 /*
  * Alcuni oggetti relativi all'output JSON, che viene creato durante tutto il
@@ -65,6 +65,10 @@ public class OpenData
 
 	private String wrap(String field, boolean last)
 	{
+		if(field == null)
+		{
+			field = "";
+		}
 		String tmp = csvTS + field + csvTS;
 		if(!last)
 		{
@@ -86,7 +90,7 @@ public class OpenData
 		PrintWriter pw;
 		WriterAppender wa;
 		log = Logger.getLogger("OPENDATA");
-		log.setLevel(Level.INFO);
+		log.setLevel(Level.DEBUG);
 		pl = new PatternLayout(config.getProperty("log.pattern"));
 		lf = new File(config.getProperty("log.file"));
 		pw = new PrintWriter(lf);
@@ -144,6 +148,7 @@ public class OpenData
 		csvTS = config.getProperty("csv.ts");
 		csvBOM = config.getProperty("csv.bom");
 		labelIsil = config.getProperty("label.xml.isil");
+		labelSbn = config.getProperty("label.xml.sbn");
 		log.info("Separatore campi per formato CSV [" + csvFS + "]");
 		log.info("Separatore testo per formato CSV [" + csvTS + "]");
 	}
@@ -157,7 +162,8 @@ public class OpenData
 		log.debug("Query: " + query);
 		stmt = db.prepare(query);
 		bibs = db.select(qconfig.getProperty("censite.query"));
-		String isil, denominazione;
+		log.debug("Query censite: " + qconfig.getProperty("censite.query"));
+		String isil, sbn, denominazione;
 		int idBib;
 		ResultSetMetaData rsmd;
 		StringWriter output = new StringWriter();
@@ -187,6 +193,7 @@ public class OpenData
 			{
 				limit--;
 				isil = bibs.getString("isil");
+				sbn = bibs.getString("sbn");
 				idBib = bibs.getInt("id");
 				denominazione = bibs.getString("denominazione");
 				pw = new PrintWriter(output);
@@ -208,6 +215,7 @@ public class OpenData
 							row = "";
 							cell = "";
 							header += wrap(labelIsil);
+							header += wrap(labelSbn);
 							header += wrap("denominazione");
 							for(i = 1; i < columns; i++)
 							{
@@ -237,7 +245,7 @@ public class OpenData
 								pw.flush();
 							}
 							row = "";
-							row += wrap(isil) + wrap(denominazione);
+							row += wrap(isil) + wrap(sbn) + wrap(denominazione);
 							for(i = 1; i < columns; i++)
 							{
 								cell = bib.getString(i);
@@ -1072,6 +1080,123 @@ public class OpenData
 		log.info("Elaborazione contatti terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
 	}
 
+	public String indirizzi()
+		{
+			ResultSet bibs;
+			ResultSet bib;
+			PreparedStatement stmt;
+			String query = qconfig.getProperty("indirizzi.query");
+			log.debug("Query: " + query);
+			stmt = db.prepare(query);
+			bibs = db.select(qconfig.getProperty("tutte.query"));
+			log.debug("Query censite: " + qconfig.getProperty("tutte.query"));
+			String isil, denominazione;
+			int idBib;
+			ResultSetMetaData rsmd;
+			StringWriter output = new StringWriter();
+			PrintWriter pw = null;
+			String row = null, cell;
+			String oldIsil = "";
+			int limit = Integer.MAX_VALUE;
+			int columns = 0;
+			int i;
+			log.info("Elaborazione territorio");
+			try
+			{
+				limit = Integer.parseInt(config.getProperty("censite.limit"));
+				log.warn("Elaborazione delle prime " + limit + " biblioteche");
+			}
+			catch(NumberFormatException e)
+			{
+				log.warn("Elaborazione di tutte le biblioteche");
+			}
+			partialStart = System.nanoTime();
+			try
+			{
+				boolean headerOk = false;
+				while(bibs.next() && limit > 0)
+				{
+					limit--;
+					isil = bibs.getString("isil");
+					idBib = bibs.getInt("id");
+					denominazione = bibs.getString("denominazione");
+					pw = new PrintWriter(output);
+					stmt.setInt(1, idBib);
+					bib = stmt.executeQuery();
+					while(bib.next() && limit-- > 0)
+					{
+						log.debug("Elaborazione " + isil);
+						try
+						{
+	
+	// una sola volta si crea l'header
+	
+							if(!headerOk)
+							{
+								rsmd = bib.getMetaData();
+								columns = rsmd.getColumnCount() - 3;
+								String header = csvBOM;
+								row = "";
+								cell = "";
+								header += wrap(labelIsil);
+								header += wrap("denominazione");
+								for(i = 1; i < columns; i++)
+								{
+									header += wrap(rsmd.getColumnLabel(i));
+								}
+								header += wrap(rsmd.getColumnLabel(i), true);
+								pw.println(header);
+								headerOk = true;
+							}
+	
+							if(!isil.equals(oldIsil))
+							{
+								log.debug(denominazione);
+								if(oldIsil != "")
+								{
+									row += csvTS;
+									log.debug("oldISIL non null: " + row);
+									pw.println(row);
+									pw.flush();
+								}
+								row = "";
+								row += wrap(isil) + wrap(denominazione);
+								for(i = 1; i < columns; i++)
+								{
+									cell = bib.getString(i);
+									if(cell == null)
+									{
+										cell = "";
+									}
+									row += wrap(cell.trim());
+								}
+								log.debug("Nuova riga: " + row);
+								row += wrap(bib.getString(i));
+								oldIsil = isil;
+							}
+	
+						}
+						catch(SQLException e)
+						{
+							log.error("Errore SQL: " + e.getMessage());
+						}
+					}
+				}
+				row += csvTS;
+				log.debug("Ultimo ISIL: " + row);
+				pw.println(row);
+				pw.flush();
+			}
+			catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+			pw.close();
+			partialStop = System.nanoTime();
+			log.info("Elaborazione territorio terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
+			return output.getBuffer().toString();
+		}
+
 	public static void main(String[] args)
 	{
 		OpenData od = new OpenData();
@@ -1091,6 +1216,14 @@ public class OpenData
 				tFile = od.config.getProperty("territorio.file");
 				pw = new PrintWriter(tDir + tFile);
 				pw.println(od.territorio());
+				pw.close();
+				od.zip(tFile);
+			}
+			if(od.config.getProperty("indirizzi") != null)
+			{
+				tFile = od.config.getProperty("indirizzi.file");
+				pw = new PrintWriter(tDir + tFile);
+				pw.println(od.indirizzi());
 				pw.close();
 				od.zip(tFile);
 			}
