@@ -98,8 +98,7 @@ territorio.query = \
 		replace(`g`.`longitudine`, '.', ',') as longitudine, \
 		contatti.valore as contatto, \
 		contatti.note as note, \
-		contatti.id_contatti_tipi as tipo, \
-		cod.valore as SBN \
+		contatti.id_contatti_tipi as tipo \
 	FROM \
 		`contatti` AS `contatti` RIGHT OUTER JOIN \
 		`biblioteca` AS `b` \
@@ -128,8 +127,8 @@ indirizzi.query = \
 		`c`.`denominazione` AS `comune`, \
 		concat('', lpad(`c`.`codice_istat`, 6, 0)) AS `codice istat comune`, \
 		`p`.`denominazione` AS `provincia`, \
-		`r`.`denominazione` AS `regione`, \
 		concat('', lpad(`p`.`codice_istat`, 3, 0)) AS `codice istat provincia`, \
+		`r`.`denominazione` AS `regione`, \
 		replace(`g`.`latitudine`, '.', ',') as latitudine, \
 		replace(`g`.`longitudine`, '.', ',') as longitudine \
 	FROM \
