@@ -854,7 +854,7 @@ public class OpenData
 		int idBib = 0;
 		int count = 0;
 		log.debug("Query: " + query);
-		bibs = db.select(qconfig.getProperty("censite.query"));
+		bibs = db.select(qconfig.getProperty("tutte.query"));
 		int limit = Integer.MAX_VALUE;
 		log.info("Estrazione formato JSON");
 		partialStart = System.nanoTime();
@@ -992,7 +992,7 @@ public class OpenData
 // Si comincia il ciclo da tipologie ed ente di appartenenza, che però saranno
 // aggiunti in fondo
 
-				String tipAmm = null, ente = null, tipFunz = null;
+				String tipAmm = null, ente = null, tipFunz = null, note = null;
 				JsonObject jAccesso = new JsonObject();
 				while(bib.next())
 				{
@@ -1078,6 +1078,22 @@ public class OpenData
 				jBib.addProperty("tipologia-amministrativa", tipAmm);
 				jBib.addProperty("tipologia-funzionale", tipFunz);
 				jBib.addProperty("ente", ente);
+
+// Estrae l'eventuale stato di catalogazione				
+								
+				query = qconfig.getProperty("stato.catalogazione.query");
+				stmt = db.prepare(query);
+				stmt.setInt(1, idBib);
+				bib = stmt.executeQuery();
+				if(bib.next())
+				{
+					note = bib.getString("note");
+				}
+				else
+				{
+					note = null;
+				}
+				jBib.addProperty("stato-registrazione", note);
 
 // Dopo aver completato una biblioteca, si aggiunge a tutte le altre.
 

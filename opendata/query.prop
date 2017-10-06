@@ -342,6 +342,24 @@ denominazioni.alternative.query = \
 	WHERE \
 		`d`.`id_biblioteca` = ? \
   ORDER BY `denominazione`
+
+isil.query = \
+	SELECT \
+		concat('IT-', isil_provincia, lpad(isil_numero, 4, 0)) as isil \
+	FROM \
+		biblioteca as b \
+	WHERE \
+		b.id_biblioteca = ?
+  
+stato.catalogazione.query = \
+	SELECT \
+		st.descrizione AS note \
+	FROM \
+		stato_catalogazione_tipo AS st, \
+		stato_catalogazione AS s \
+	WHERE \
+		s.id_biblioteca = ? \
+		AND s.id_stato_catalogazione = st.id_stato_catalogazione_tipo
   
 json.query = \
 	select \
@@ -359,11 +377,14 @@ json.query = \
 		`e`.`denominazione` AS `denominazione ente`, \
 		`ta`.`descrizione` AS `tipologia amministrativa`, \
 		b.accesso_riservato as riservata, \
-		b.accesso_handicap as handicap \
+		b.accesso_handicap as handicap, \
+		n.id_stato_catalogazione as `note` \
 	FROM \
 		`biblioteca` AS `b` \
 		LEFT OUTER JOIN `geolocalizzazione` AS `g` \
-		ON `g`.`id_biblioteca` = `b`.`id_biblioteca`, \
+		ON `g`.`id_biblioteca` = `b`.`id_biblioteca` \
+		LEFT OUTER JOIN `stato_catalogazione` as `n` \
+		ON `n`.`id_biblioteca` = `b`.`id_biblioteca`, \
  		`comune` AS `c`, \
 		`provincia` AS `p`, \
 		`regione` AS `r`, \
@@ -379,4 +400,3 @@ json.query = \
 		AND `b`.`id_tipologia_funzionale` = `tf`.`id_tipologia_funzionale` \
 		AND `b`.`id_biblioteca` = ? \
 	ORDER BY `comune` ASC, `provincia` ASC
-	
