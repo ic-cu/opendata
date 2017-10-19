@@ -369,6 +369,7 @@ json.query = \
 		`c`.`denominazione` AS `comune`, \
 		concat('', lpad(`c`.`codice_istat`, 6, 0)) AS `codice istat comune`, \
 		`p`.`denominazione` AS `provincia`, \
+		`p`.`sigla` AS `sigla`, \
 		`r`.`denominazione` AS `regione`, \
 		concat('', lpad(`p`.`codice_istat`, 3, 0)) AS `codice istat provincia`, \
 		replace(`g`.`latitudine`, '.', ',') as latitudine, \

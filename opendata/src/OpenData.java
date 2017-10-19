@@ -1036,6 +1036,7 @@ public class OpenData
 					JsonObject jProvincia = new JsonObject();
 					jProvincia.addProperty("nome", bib.getString("provincia"));
 					jProvincia.addProperty("istat", bib.getString("codice istat provincia"));
+					jProvincia.addProperty("sigla", bib.getString("sigla"));
 					jIndirizzo.add("provincia", jProvincia);
 					jIndirizzo.addProperty("regione", bib.getString("regione"));
 
