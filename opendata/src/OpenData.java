@@ -992,7 +992,7 @@ public class OpenData
 // Si comincia il ciclo da tipologie ed ente di appartenenza, che però saranno
 // aggiunti in fondo
 
-				String tipAmm = null, ente = null, tipFunz = null, note = null;
+				String tipAmm = null, ente = null, tipFunz = null, note = null, isilTarget = null;
 				JsonObject jAccesso = new JsonObject();
 				while(bib.next())
 				{
@@ -1089,10 +1089,16 @@ public class OpenData
 				if(bib.next())
 				{
 					note = bib.getString("note");
+					isilTarget = bib.getString("isil confluita");
+					if(isilTarget != null) 
+					{
+						note += " in " + isilTarget; 
+					}
 				}
 				else
 				{
 					note = null;
+					isilTarget = null;
 				}
 				jBib.addProperty("stato-registrazione", note);
 
