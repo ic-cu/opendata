@@ -359,7 +359,7 @@ stati.catalogazione.query = \
 	FROM \
 		stato_catalogazione_tipo AS st, \
 		stato_catalogazione AS s \
-		RIGHT OUTER JOIN biblioteca AS b \
+		LEFT OUTER JOIN biblioteca AS b \
 		ON b.id_biblioteca = s.id_biblioteca_target \
 	WHERE \
 		s.id_stato_catalogazione = st.id_stato_catalogazione_tipo
