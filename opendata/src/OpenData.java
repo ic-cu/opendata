@@ -65,7 +65,9 @@ public class OpenData
 
 /*
  * Metodo per ripulire una stringa da sporcizia varia, tipicamente spazi
- * multipli, a capo, spazi iniziali o finali
+ * multipli, a capo, spazi iniziali o finali. Corregge anche eventuali doppi
+ * apici, che in CSV devono essere raddoppiati per evitare che siano confusi
+ * con il delimitatore di testo, di solito appunto il doppio apice.
  */
 
 	private String clear(String s)
@@ -74,6 +76,7 @@ public class OpenData
 		{
 			s = s.replaceAll("\n", " ");
 			s = s.replaceAll(" +", " ");
+			s = s.replaceAll("\"", "\"\"");
 		}
 		else
 		{
@@ -611,9 +614,9 @@ public class OpenData
 						{
 							for(i = 1; i < columns; i++)
 							{
-								header += csvTS + rsmd.getColumnLabel(i) + csvTS + csvFS;
+								header += wrap(rsmd.getColumnLabel(i));
 							}
-							header += csvTS + rsmd.getColumnLabel(i) + csvTS;
+							header += wrap(rsmd.getColumnLabel(i), true);
 							pw.println(header);
 							headerOk = true;
 						}
@@ -625,9 +628,9 @@ public class OpenData
 							{
 								cell = "";
 							}
-							row += csvTS + cell.trim() + csvTS + csvFS;
+							row += wrap(cell);
 						}
-						row += csvTS + bib.getString(i) + csvTS;
+						row += wrap(bib.getString(i), true);
 						pw.println(row);
 					}
 					catch(SQLException e)
