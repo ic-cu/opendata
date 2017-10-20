@@ -354,7 +354,7 @@ isil.query = \
 stati.catalogazione.query = \
 	SELECT \
 		st.descrizione AS stato, \
-		b.id_biblioteca AS id, \
+		s.id_biblioteca AS id, \
 		concat('IT-', b.isil_provincia, lpad(b.isil_numero, 4, 0)) as 'isil confluita' \
 	FROM \
 		stato_catalogazione_tipo AS st, \

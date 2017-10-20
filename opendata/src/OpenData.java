@@ -152,7 +152,7 @@ public class OpenData
 				isil = rs.getString("isil confluita");
 				if(isil != null) 
 				{
-					stato += " in " + isil; 
+					stato += " in " + isil;
 				}
 				statiMap.put(id, stato);
 			}
