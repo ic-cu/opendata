@@ -1178,7 +1178,7 @@ public class OpenData
 		int limit = Integer.MAX_VALUE;
 		int columns = 0;
 		int i;
-		log.info("Elaborazione territorio");
+		log.info("Elaborazione indirizzi");
 		try
 		{
 			limit = Integer.parseInt(config.getProperty("censite.limit"));
@@ -1271,7 +1271,7 @@ public class OpenData
 		}
 		pw.close();
 		partialStop = System.nanoTime();
-		log.info("Elaborazione territorio terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
+		log.info("Elaborazione indirizzi terminata in " + (partialStop - partialStart) / 1000000000 + " secondi");
 		return output.getBuffer().toString();
 	}
 
