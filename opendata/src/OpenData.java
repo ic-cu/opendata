@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
+import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
@@ -47,6 +48,7 @@ public class OpenData
 	private long totalStart, totalStop, partialStart, partialStop;
 	private SimpleDateFormat dateStampFormat, dateFormat;
 	private String labelIsil, labelSbn;
+	private TreeMap<Integer, String> isilMap, statiMap;
 
 /*
  * Alcuni oggetti relativi all'output JSON, che viene creato durante tutto il
@@ -119,6 +121,52 @@ public class OpenData
 		log.addAppender(wa);
 	}
 
+/*
+ * Dati frequentemente usati sono caricati in apposite mappe ordinate, tutte
+ * indicizzate per id della biblioteca
+ */
+	
+	private void loadMaps()
+	{
+		ResultSet rs;
+		String q;
+		String isil, stato;
+		int id;
+		try
+		{
+			isilMap = new TreeMap<Integer, String>();
+			q = qconfig.getProperty("tutte.query");
+			log.debug("Query tutte: " + q);
+			rs = db.select(q);
+			while(rs.next())
+			{
+				id = rs.getInt("id");
+				isil = rs.getString("isil");
+				isilMap.put(id, isil);
+			}
+			statiMap = new TreeMap<Integer, String>();
+			q = qconfig.getProperty("stati.catalogazione.query");
+			log.debug("Query stati: " + q);
+			rs = db.select(q);
+			while(rs.next())
+			{
+				id = rs.getInt("id");
+				stato = rs.getString("stato");
+				isil = rs.getString("isil confluita");
+				if(isil != null) 
+				{
+					stato += " in " + isil;
+				}
+				statiMap.put(id, stato);
+			}
+		}
+		catch(SQLException e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
+	
 	public OpenData()
 	{
 		config = new Properties();
@@ -170,6 +218,7 @@ public class OpenData
 		labelSbn = config.getProperty("label.xml.sbn");
 		log.info("Separatore campi per formato CSV [" + csvFS + "]");
 		log.info("Separatore testo per formato CSV [" + csvTS + "]");
+		loadMaps();
 	}
 
 	public String territorio()
@@ -917,7 +966,8 @@ public class OpenData
 // proprietà piuttosto che un array
 
 				JsonObject jCodici = new JsonObject();
-				isil = bibs.getString("isil");
+//				isil = bibs.getString("isil");
+				isil = isilMap.get(idBib);
 				jCodici.addProperty("isil", isil);
 
 				query = qconfig.getProperty("codici.query");
@@ -995,7 +1045,7 @@ public class OpenData
 // Si comincia il ciclo da tipologie ed ente di appartenenza, che però saranno
 // aggiunti in fondo
 
-				String tipAmm = null, ente = null, tipFunz = null, note = null, isilTarget = null;
+				String tipAmm = null, ente = null, tipFunz = null;
 				JsonObject jAccesso = new JsonObject();
 				while(bib.next())
 				{
@@ -1085,25 +1135,7 @@ public class OpenData
 
 // Estrae l'eventuale stato di catalogazione				
 								
-				query = qconfig.getProperty("stato.catalogazione.query");
-				stmt = db.prepare(query);
-				stmt.setInt(1, idBib);
-				bib = stmt.executeQuery();
-				if(bib.next())
-				{
-					note = bib.getString("note");
-					isilTarget = bib.getString("isil confluita");
-					if(isilTarget != null) 
-					{
-						note += " in " + isilTarget; 
-					}
-				}
-				else
-				{
-					note = null;
-					isilTarget = null;
-				}
-				jBib.addProperty("stato-registrazione", note);
+				jBib.addProperty("stato-registrazione", statiMap.get(idBib));
 
 // Dopo aver completato una biblioteca, si aggiunge a tutte le altre.
 

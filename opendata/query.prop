@@ -351,18 +351,18 @@ isil.query = \
 	WHERE \
 		b.id_biblioteca = ?
   
-stato.catalogazione.query = \
+stati.catalogazione.query = \
 	SELECT \
-		st.descrizione AS note, \
+		st.descrizione AS stato, \
+		s.id_biblioteca AS id, \
 		concat('IT-', b.isil_provincia, lpad(b.isil_numero, 4, 0)) as 'isil confluita' \
 	FROM \
 		stato_catalogazione_tipo AS st, \
 		stato_catalogazione AS s \
-		RIGHT OUTER JOIN biblioteca AS b \
+		LEFT OUTER JOIN biblioteca AS b \
 		ON b.id_biblioteca = s.id_biblioteca_target \
 	WHERE \
-		s.id_biblioteca = ? \
-		AND s.id_stato_catalogazione = st.id_stato_catalogazione_tipo
+		s.id_stato_catalogazione = st.id_stato_catalogazione_tipo
   
 json.query = \
 	select \
