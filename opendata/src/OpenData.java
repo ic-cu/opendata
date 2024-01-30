@@ -1014,7 +1014,13 @@ public class OpenData
 				JsonArray jNomiPrecedenti = new JsonArray();
 				while(bib.next())
 				{
-					jNomiPrecedenti.add(new JsonPrimitive(bib.getString("denominazione")));
+					String prec = bib.getString("denominazione");
+					if (prec != null && prec != "") {
+						jNomiPrecedenti.add(new JsonPrimitive(prec));
+						
+					} else {
+						log.warn(idBib + ": denominazione precedente vuota o null");
+					}
 				}
 				jNomi.add("precedenti", jNomiPrecedenti);
 
@@ -1027,7 +1033,13 @@ public class OpenData
 				JsonArray jNomiAlternativi = new JsonArray();
 				while(bib.next())
 				{
-					jNomiAlternativi.add(new JsonPrimitive(bib.getString("denominazione")));
+					String altern = bib.getString("denominazione");
+					if (altern != null && altern != "") {
+						jNomiAlternativi.add(new JsonPrimitive(altern));
+						
+					} else {
+						log.warn(idBib + ": denominazione alternativa vuota o null");
+					}
 				}
 				jNomi.add("alternative", jNomiAlternativi);
 
